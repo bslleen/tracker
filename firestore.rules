@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isString(value, minLen, maxLen) {
+      return value is string && value.size() >= minLen && value.size() <= maxLen;
+    }
+
+    function isValidGoal(data) {
+      let allowedStatus = ['active', 'archived', 'abandoned', 'carried'];
+      let allowedChunkSizes = [5, 10, 15, 20, 25, 30, 45, 60];
+      return data.keys().hasOnly([
+          'name', 'month', 'totalMinutes', 'chunkMinutes', 'completedChunks',
+          'status', 'carriedFrom', 'hue', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasAll(['name', 'month', 'totalMinutes', 'chunkMinutes', 'completedChunks', 'status'])
+        && isString(data.name, 1, 60)
+        && data.totalMinutes is int && data.totalMinutes >= 5 && data.totalMinutes <= 60000
+        && (
+          data.chunkMinutes in allowedChunkSizes
+          || (data.chunkMinutes is int && data.chunkMinutes >= 1 && data.chunkMinutes <= 120)
+        )
+        && data.completedChunks is int
+        && data.completedChunks >= 0
+        && data.completedChunks <= math.ceil(data.totalMinutes / data.chunkMinutes)
+        && data.status in allowedStatus
+        && data.hue is number && data.hue >= 0 && data.hue <= 30;
+    }
+
+    function isValidSession(data) {
+      return data.keys().hasOnly(['goalId', 'date', 'minutes', 'chunks', 'at'])
+        && data.keys().hasAll(['goalId', 'date', 'minutes', 'chunks', 'at'])
+        && isString(data.goalId, 1, 200)
+        && isString(data.date, 10, 10)
+        && data.minutes is int && data.minutes >= 1 && data.minutes <= 600
+        && data.chunks is int && data.chunks >= 0;
+    }
+
+    function isValidSpending(data) {
+      return data.keys().hasOnly(['date', 'amount', 'category', 'note', 'createdAt'])
+        && data.keys().hasAll(['date', 'amount', 'category', 'createdAt'])
+        && isString(data.date, 10, 10)
+        && data.amount is number && data.amount >= 0
+        && isString(data.category, 1, 40);
+    }
+
+    match /users/{uid} {
+      // The user doc itself (displayName/createdAt/settings) — owner-only,
+      // no field-shape validation beyond that (not spec'd in detail here).
+      allow read, write: if isOwner(uid);
+
+      match /goals/{goalId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && isValidGoal(request.resource.data);
+      }
+
+      match /sessions/{sessionId} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidSession(request.resource.data);
+        // Sessions are immutable once written — undo deletes instead of editing.
+        allow update: if false;
+      }
+
+      match /months/{monthId} {
+        // Written via dotted-path increment()s from trusted app code (see
+        // src/data/sessionWrites.ts); shape is a nested numeric map rather
+        // than a fixed field set, so this stays owner-scoped only.
+        allow read, write: if isOwner(uid);
+      }
+
+      match /spending/{entryId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && isValidSpending(request.resource.data);
+      }
+    }
+  }
+}

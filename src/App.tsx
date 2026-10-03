@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/AppShell'
+import { AuthGate } from '@/components/AuthGate'
 import { TooltipProvider } from '@/components/ui'
 
 const Styleguide = lazy(() => import('./pages/Styleguide'))
@@ -19,7 +20,14 @@ function App() {
             }
           />
         )}
-        <Route path="/*" element={<AppShell />} />
+        <Route
+          path="/*"
+          element={
+            <AuthGate>
+              <AppShell />
+            </AuthGate>
+          }
+        />
       </Routes>
     </TooltipProvider>
   )

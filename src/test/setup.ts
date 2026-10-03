@@ -16,6 +16,18 @@ if (!window.matchMedia) {
   })
 }
 
+// jsdom doesn't implement ResizeObserver at all. A no-op stub is enough for
+// components that only use it to react to size changes (useContainerWidth
+// already reads getBoundingClientRect() once on mount for the initial size).
+if (!window.ResizeObserver) {
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  window.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
+}
+
 // Match index.html's fixed DOM roots so components that portal into
 // #overlay-root / #toast-root (via getOverlayRoot()) don't throw in tests.
 for (const id of ['bg-root', 'app-root', 'overlay-root', 'toast-root']) {

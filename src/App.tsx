@@ -5,6 +5,7 @@ import { AuthGate } from '@/components/AuthGate'
 import { TooltipProvider } from '@/components/ui'
 
 const Styleguide = lazy(() => import('./pages/Styleguide'))
+const StyleguideGrid = lazy(() => import('./pages/StyleguideGrid'))
 
 function App() {
   return (
@@ -16,6 +17,16 @@ function App() {
             element={
               <Suspense fallback={null}>
                 <Styleguide />
+              </Suspense>
+            }
+          />
+        )}
+        {import.meta.env.DEV && (
+          <Route
+            path="/styleguide/grid"
+            element={
+              <Suspense fallback={null}>
+                <StyleguideGrid />
               </Suspense>
             }
           />

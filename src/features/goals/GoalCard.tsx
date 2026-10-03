@@ -34,7 +34,14 @@ export function GoalCard({ goal, justCreated = false, onPulseEnd }: GoalCardProp
             <h3 className="text-[length:var(--text-body)] font-medium text-text">{goal.name}</h3>
             <span className="num text-[length:var(--text-small)] text-text-2">{Math.round(percent)}%</span>
           </div>
-          <ChunkGrid total={total} completed={goal.completedChunks} className="max-h-24 overflow-hidden" />
+          <ChunkGrid
+            total={total}
+            completed={goal.completedChunks}
+            chunkMinutes={goal.chunkMinutes}
+            accentShade={goal.hue}
+            size="sm"
+            className="max-h-24 overflow-hidden"
+          />
         </Card>
       </Link>
     </motion.div>

@@ -67,7 +67,15 @@ export function ChunksStep({
         </span>
       </div>
 
-      {chunkMinutes && total > 0 && <ChunkGrid total={total} className="max-h-40 overflow-hidden" />}
+      {chunkMinutes && total > 0 && (
+        <ChunkGrid
+          total={total}
+          completed={0}
+          chunkMinutes={chunkMinutes}
+          interactive={false}
+          className="max-h-40 overflow-hidden"
+        />
+      )}
 
       <div className="flex items-center justify-between text-[length:var(--text-small)] text-text-2">
         <span>{formatMonthLabel(month)}</span>

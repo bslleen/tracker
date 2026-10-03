@@ -106,6 +106,27 @@ button {
   }
 }
 
+@keyframes chunk-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes chunk-ripple {
+  from {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
 @keyframes goal-pulse {
   0% {
     box-shadow:

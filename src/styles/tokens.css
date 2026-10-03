@@ -1,0 +1,117 @@
+/*
+ * Single source of truth for design tokens: colors, radius, z-index, motion,
+ * and fluid type. See CLAUDE.md "Palette" and "LAYERING RULES".
+ *
+ * scripts/check-z-index.mjs exempts this file from the raw-numeric-z-index
+ * ban — this is the only place a z-index number is allowed to live.
+ *
+ * Tailwind v4 has no config-level switch to remove its built-in bare-number
+ * z-index utilities (z-10, z-50, …) or arbitrary values (z-[999]) — they are
+ * generated dynamically regardless of theme. Those are disabled instead by
+ * scripts/check-z-index.mjs, which fails `npm run lint` if any raw numeric
+ * z-index (CSS, inline style, or Tailwind class) appears outside this file.
+ * Use the z-* utilities defined below (z-raised, z-modal, …) instead.
+ */
+
+:root {
+  /* Colors — canonical names, referenced directly as var(--bg) etc. */
+  --bg: #0b0d0e;
+  --surface: #14171a;
+  --surface-2: #1b1f23;
+  --chunk-empty: #23282d;
+  --text: #e8eaec;
+  --text-2: #7c858d;
+  --accent: #4ade80;
+  --accent-glow: rgb(74 222 128 / 30%);
+  --streak: #fb923c;
+  --danger: #f87171;
+  --hairline: rgb(255 255 255 / 6%);
+
+  /* Spacing — scale itself is Tailwind's default; this is the one extra value */
+  --gutter: clamp(16px, 4vw, 40px);
+
+  /* Fonts */
+  --font-sans: 'Geist Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+
+  /* Fluid type not wired into Tailwind's theme (see @theme block for hero/title) */
+  --text-body: 1rem;
+  --text-small: 0.8125rem;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+  --duration-slow: 420ms;
+  --duration-slower: 700ms;
+
+  /* z-index scale: base 0 · raised 10 · sticky 100 · nav 200 · dropdown 300 ·
+     overlay 400 · modal 500 · toast 600 · tooltip 700 · cursor 800 ·
+     bg -1 (background layer, inside its own root only) */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-nav: 200;
+  --z-dropdown: 300;
+  --z-overlay: 400;
+  --z-modal: 500;
+  --z-toast: 600;
+  --z-tooltip: 700;
+  --z-cursor: 800;
+  --z-bg: -1;
+}
+
+/* Tailwind theme wiring — generates bg-, text-, and border- color utilities,
+   rounded- radius utilities, and text-hero / text-title font-size utilities. */
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-chunk-empty: var(--chunk-empty);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-accent: var(--accent);
+  --color-accent-glow: var(--accent-glow);
+  --color-streak: var(--streak);
+  --color-danger: var(--danger);
+  --color-hairline: var(--hairline);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  --text-hero: clamp(3.5rem, 2rem + 8vw, 10rem);
+  --text-title: clamp(1.5rem, 1.1rem + 1.5vw, 2.5rem);
+}
+
+/* z-index utilities — the ONLY sanctioned way to set z-index in components.
+   Each references the token above so the number is defined exactly once. */
+@utility z-raised {
+  z-index: var(--z-raised);
+}
+@utility z-sticky {
+  z-index: var(--z-sticky);
+}
+@utility z-nav {
+  z-index: var(--z-nav);
+}
+@utility z-dropdown {
+  z-index: var(--z-dropdown);
+}
+@utility z-overlay {
+  z-index: var(--z-overlay);
+}
+@utility z-modal {
+  z-index: var(--z-modal);
+}
+@utility z-toast {
+  z-index: var(--z-toast);
+}
+@utility z-tooltip {
+  z-index: var(--z-tooltip);
+}
+@utility z-cursor {
+  z-index: var(--z-cursor);
+}

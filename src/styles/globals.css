@@ -1,0 +1,87 @@
+/*
+ * Base element styles and the fixed DOM-root layering contract.
+ * See CLAUDE.md "LAYERING RULES".
+ */
+
+html {
+  color-scheme: dark;
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+/* Fixed sibling roots — see index.html. Everything that floats portals into
+   #overlay-root or #toast-root; page content lives in #app-root only. */
+#bg-root {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-bg);
+  pointer-events: none;
+}
+
+#app-root {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+}
+
+/* Children are position: fixed and carry their own z-* token; these roots
+   stay un-positioned-context so they create no stacking surprises. */
+#overlay-root,
+#toast-root {
+  position: relative;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: inherit;
+}
+
+::selection {
+  background: var(--accent-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utilities */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.glow {
+  box-shadow:
+    0 0 0 1px var(--accent-glow),
+    0 0 32px 0 var(--accent-glow);
+}
+
+.hairline {
+  border: 1px solid var(--hairline);
+}

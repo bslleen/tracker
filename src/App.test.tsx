@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest'
 import App from './App'
 
 describe('App', () => {
-  it('renders without crashing', () => {
+  it('renders the dashboard at /', async () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>,
     )
-    expect(screen.getByText('Chunks')).toBeInTheDocument()
+    expect(await screen.findByText('Dashboard')).toBeInTheDocument()
   })
 })

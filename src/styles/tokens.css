@@ -30,6 +30,12 @@
   /* Spacing — scale itself is Tailwind's default; this is the one extra value */
   --gutter: clamp(16px, 4vw, 40px);
 
+  /* Navigation shell dimensions — read by both Navigation and AppShell so
+     the main content inset always matches whatever nav tier is rendered. */
+  --nav-bottom-height: 64px;
+  --nav-rail-width: 72px;
+  --nav-sidebar-width: 240px;
+
   /* Fonts */
   --font-sans: 'Geist Variable', system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;

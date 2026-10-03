@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { PlusIcon } from '@/components/icons'
-import { ResponsiveModal } from '@/components/ResponsiveModal'
 import { Button } from '@/components/ui'
+import { LogTimeSheet } from '@/features/sessions/LogTimeSheet'
 import { cn } from '@/lib/cn'
 
 export interface LogTimeFabProps {
@@ -9,9 +9,8 @@ export interface LogTimeFabProps {
 }
 
 /**
- * Opens <LogTimeSheet> (Phase 5) via <ResponsiveModal>. Placeholder content
- * for now. Rendered inline by each nav tier (never a separately-positioned
- * fixed element) so the mobile circular button shares the bottom bar's own
+ * Rendered inline by each nav tier (never a separately-positioned fixed
+ * element) so the mobile circular button shares the bottom bar's own
  * stacking context — see CLAUDE.md LAYERING RULES.
  */
 export function LogTimeFab({ variant }: LogTimeFabProps) {
@@ -51,14 +50,7 @@ export function LogTimeFab({ variant }: LogTimeFabProps) {
         </Button>
       )}
 
-      <ResponsiveModal
-        open={open}
-        onOpenChange={setOpen}
-        title="Log time"
-        description="The full chunk-logging flow lands in Phase 5."
-      >
-        <p className="text-[length:var(--text-small)] text-text-2">Placeholder — not wired up yet.</p>
-      </ResponsiveModal>
+      <LogTimeSheet open={open} onOpenChange={setOpen} />
     </>
   )
 }

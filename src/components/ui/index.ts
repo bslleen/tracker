@@ -1,3 +1,4 @@
+export { AnimatedNumber, type AnimatedNumberProps } from './AnimatedNumber'
 export { Button, type ButtonProps } from './Button'
 export { IconButton, type IconButtonProps } from './IconButton'
 export { Card } from './Card'

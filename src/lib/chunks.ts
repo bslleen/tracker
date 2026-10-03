@@ -24,6 +24,38 @@ export function remainingMinutes(totalMinutes: number, chunkMinutes: number, com
   return Math.max(0, totalMinutes - completedChunks * chunkMinutes)
 }
 
+export interface ChunkProgressUpdate {
+  chunksAdded: number
+  newCarryMinutes: number
+}
+
+/**
+ * Given a goal's current progress and a number of minutes just logged,
+ * returns how many whole chunks that completes and the new remainder to
+ * carry. Capped so completedChunks can never exceed the goal's chunk count
+ * (also enforced by firestore.rules) — once a log would complete the goal,
+ * any further minutes in that same session aren't carried into a chunk that
+ * no longer exists. Shared by the write path (src/data/sessionWrites.ts) and
+ * the Log Time sheet's live preview so they can't drift apart.
+ */
+export function computeChunkProgress(
+  minutes: number,
+  chunkMinutes: number,
+  carryMinutes: number,
+  completedChunks: number,
+  totalMinutes: number,
+): ChunkProgressUpdate {
+  const maxChunks = chunkCount(totalMinutes, chunkMinutes)
+  const remainingChunks = Math.max(0, maxChunks - completedChunks)
+
+  const totalAvailable = carryMinutes + minutes
+  const uncappedChunksAdded = Math.floor(totalAvailable / chunkMinutes)
+  const chunksAdded = Math.min(uncappedChunksAdded, remainingChunks)
+  const newCarryMinutes = chunksAdded < uncappedChunksAdded ? 0 : totalAvailable % chunkMinutes
+
+  return { chunksAdded, newCarryMinutes }
+}
+
 export function nextMonth(month: string): string {
   const [yearStr, monthStr] = month.split('-')
   const year = Number(yearStr)
@@ -34,12 +66,19 @@ export function nextMonth(month: string): string {
   return `${year}-${String(monthNum + 1).padStart(2, '0')}`
 }
 
+/** "2026-10" for today's date. */
+export function currentMonth(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
 export interface CarriedGoalData {
   name: string
   month: string
   totalMinutes: number
   chunkMinutes: number
   completedChunks: number
+  carryMinutes: number
   status: GoalStatus
   carriedFrom: string
   hue: number
@@ -53,6 +92,7 @@ export function carryOverGoal(goal: Goal): CarriedGoalData {
     totalMinutes: remainingMinutes(goal.totalMinutes, goal.chunkMinutes, goal.completedChunks),
     chunkMinutes: goal.chunkMinutes,
     completedChunks: 0,
+    carryMinutes: 0,
     status: 'active',
     carriedFrom: goal.id,
     hue: goal.hue,

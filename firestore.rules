@@ -15,10 +15,12 @@ service cloud.firestore {
       let allowedStatus = ['active', 'archived', 'abandoned', 'carried'];
       let allowedChunkSizes = [5, 10, 15, 20, 25, 30, 45, 60];
       return data.keys().hasOnly([
-          'name', 'month', 'totalMinutes', 'chunkMinutes', 'completedChunks',
-          'status', 'carriedFrom', 'hue', 'createdAt', 'updatedAt'
+          'name', 'month', 'totalMinutes', 'chunkMinutes', 'completedChunks', 'carryMinutes',
+          'status', 'carriedFrom', 'hue', 'playlistNote', 'createdAt', 'updatedAt'
         ])
-        && data.keys().hasAll(['name', 'month', 'totalMinutes', 'chunkMinutes', 'completedChunks', 'status'])
+        && data.keys().hasAll([
+          'name', 'month', 'totalMinutes', 'chunkMinutes', 'completedChunks', 'carryMinutes', 'status'
+        ])
         && isString(data.name, 1, 60)
         && data.totalMinutes is int && data.totalMinutes >= 5 && data.totalMinutes <= 60000
         && (
@@ -28,17 +30,19 @@ service cloud.firestore {
         && data.completedChunks is int
         && data.completedChunks >= 0
         && data.completedChunks <= math.ceil(data.totalMinutes / data.chunkMinutes)
+        && data.carryMinutes is int && data.carryMinutes >= 0 && data.carryMinutes < data.chunkMinutes
         && data.status in allowedStatus
         && data.hue is number && data.hue >= 0 && data.hue <= 30;
     }
 
     function isValidSession(data) {
-      return data.keys().hasOnly(['goalId', 'date', 'minutes', 'chunks', 'at'])
-        && data.keys().hasAll(['goalId', 'date', 'minutes', 'chunks', 'at'])
+      return data.keys().hasOnly(['goalId', 'date', 'minutes', 'chunks', 'carryBefore', 'at'])
+        && data.keys().hasAll(['goalId', 'date', 'minutes', 'chunks', 'carryBefore', 'at'])
         && isString(data.goalId, 1, 200)
         && isString(data.date, 10, 10)
         && data.minutes is int && data.minutes >= 1 && data.minutes <= 600
-        && data.chunks is int && data.chunks >= 0;
+        && data.chunks is int && data.chunks >= 0
+        && data.carryBefore is int && data.carryBefore >= 0;
     }
 
     function isValidSpending(data) {

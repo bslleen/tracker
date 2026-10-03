@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { Goal } from '@/data/types'
-import { carryOverGoal, chunkCount, chunksPerHour, nextMonth, percentComplete, remainingMinutes } from './chunks'
+import {
+  carryOverGoal,
+  chunkCount,
+  chunksPerHour,
+  computeChunkProgress,
+  nextMonth,
+  percentComplete,
+  remainingMinutes,
+} from './chunks'
 
 describe('chunkCount', () => {
   it('divides evenly', () => {
@@ -23,6 +31,33 @@ describe('chunksPerHour', () => {
 
   it('returns a fraction for chunk sizes that do not divide an hour evenly', () => {
     expect(chunksPerHour(25)).toBeCloseTo(2.4)
+  })
+})
+
+describe('computeChunkProgress', () => {
+  it('completes whole chunks and carries the remainder', () => {
+    // 15-minute chunks, 7 already carried, logging 20 minutes: 27 available
+    // -> 1 chunk (15) with 12 left over.
+    expect(computeChunkProgress(20, 15, 7, 0, 60)).toEqual({ chunksAdded: 1, newCarryMinutes: 12 })
+  })
+
+  it('adds zero chunks and carries everything when under one chunk', () => {
+    expect(computeChunkProgress(5, 15, 0, 0, 60)).toEqual({ chunksAdded: 0, newCarryMinutes: 5 })
+  })
+
+  it('spans multiple chunks in one log', () => {
+    expect(computeChunkProgress(40, 15, 0, 0, 120)).toEqual({ chunksAdded: 2, newCarryMinutes: 10 })
+  })
+
+  it('caps chunksAdded at the goal size and drops carry once complete', () => {
+    // 4 chunks total (60/15), 3 already done, logging 40 minutes would
+    // normally add 2-3 chunks worth — only 1 chunk is left, so it's capped
+    // and the leftover isn't carried into a chunk that doesn't exist.
+    expect(computeChunkProgress(40, 15, 0, 3, 60)).toEqual({ chunksAdded: 1, newCarryMinutes: 0 })
+  })
+
+  it('adds nothing more once the goal is already fully complete', () => {
+    expect(computeChunkProgress(30, 15, 0, 4, 60)).toEqual({ chunksAdded: 0, newCarryMinutes: 0 })
   })
 })
 
@@ -85,6 +120,7 @@ describe('carryOverGoal', () => {
     totalMinutes: 60,
     chunkMinutes: 15,
     completedChunks: 2,
+    carryMinutes: 0,
     status: 'active',
     hue: 12,
     // Timestamp values are never read by carryOverGoal; casting keeps the
@@ -100,6 +136,7 @@ describe('carryOverGoal', () => {
       totalMinutes: 30,
       chunkMinutes: 15,
       completedChunks: 0,
+      carryMinutes: 0,
       status: 'active',
       carriedFrom: 'goal-1',
       hue: 12,

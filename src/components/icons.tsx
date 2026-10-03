@@ -107,3 +107,11 @@ export function PlusIcon(props: IconProps) {
     </Icon>
   )
 }
+
+export function MinusIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4.5 12h15" />
+    </Icon>
+  )
+}

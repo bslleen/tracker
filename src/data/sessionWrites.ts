@@ -1,7 +1,8 @@
-import { collection, doc, getDoc, increment, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { collection, doc, increment, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { computeChunkProgress } from '@/lib/chunks'
 import { invalidate } from './cache'
-import type { SessionData } from './types'
+import type { GoalData, SessionData } from './types'
 
 export interface LogSessionInput {
   uid: string
@@ -11,7 +12,12 @@ export interface LogSessionInput {
   /** two-digit day, e.g. "03" */
   day: string
   minutes: number
-  chunks: number
+}
+
+export interface LogSessionResult {
+  sessionId: string
+  chunksAdded: number
+  newCarryMinutes: number
 }
 
 function invalidateSessionWrite(uid: string, goalId: string, month: string) {
@@ -23,78 +29,105 @@ function invalidateSessionWrite(uid: string, goalId: string, month: string) {
 }
 
 /**
- * One batch: adds the session doc, increments the goal's completedChunks,
- * and increments the month doc's day/byGoal totals. Month fields are
- * incremented through dotted field paths (`days.03.total`, not a nested
- * `{ days: { '03': { total: ... } } }` object) — Firestore's `merge: true`
- * only shallow-merges top-level keys, so a nested object would silently
- * replace the whole `days.03` map (wiping other goals' totals for that day)
- * instead of merging into it.
+ * One transaction: reads the goal fresh (so a stale client-side carryMinutes
+ * can't silently clobber a more recent value — e.g. a log from another tab),
+ * computes how many whole chunks this session completes, then writes the
+ * session doc, the goal's completedChunks/carryMinutes, and the month doc's
+ * day/byGoal totals (via dotted field paths, not a nested object — Firestore's
+ * `merge: true` only shallow-merges top-level keys, so a nested object would
+ * silently replace the whole `days.03` map instead of merging into it).
  */
-export async function logSession({ uid, goalId, month, day, minutes, chunks }: LogSessionInput): Promise<string> {
-  const batch = writeBatch(db)
-
+export async function logSession({ uid, goalId, month, day, minutes }: LogSessionInput): Promise<LogSessionResult> {
   const sessionRef = doc(collection(db, 'users', uid, 'sessions'))
-  const session: SessionData = {
-    goalId,
-    date: `${month}-${day}`,
-    minutes,
-    chunks,
-    at: serverTimestamp() as SessionData['at'],
-  }
-  batch.set(sessionRef, session)
-
   const goalRef = doc(db, 'users', uid, 'goals', goalId)
-  batch.update(goalRef, {
-    completedChunks: increment(chunks),
-    updatedAt: serverTimestamp(),
+  const monthRef = doc(db, 'users', uid, 'months', month)
+
+  const { chunksAdded, newCarryMinutes } = await runTransaction(db, async (tx) => {
+    const goalSnap = await tx.get(goalRef)
+    if (!goalSnap.exists()) {
+      throw new Error(`Goal ${goalId} does not exist`)
+    }
+    const goal = goalSnap.data() as GoalData
+    const { chunksAdded, newCarryMinutes } = computeChunkProgress(
+      minutes,
+      goal.chunkMinutes,
+      goal.carryMinutes,
+      goal.completedChunks,
+      goal.totalMinutes,
+    )
+
+    const session: SessionData = {
+      goalId,
+      date: `${month}-${day}`,
+      minutes,
+      chunks: chunksAdded,
+      carryBefore: goal.carryMinutes,
+      at: serverTimestamp() as SessionData['at'],
+    }
+    tx.set(sessionRef, session)
+
+    tx.update(goalRef, {
+      completedChunks: increment(chunksAdded),
+      carryMinutes: newCarryMinutes,
+      updatedAt: serverTimestamp(),
+    })
+
+    tx.set(
+      monthRef,
+      {
+        [`days.${day}.total`]: increment(minutes),
+        [`days.${day}.byGoal.${goalId}`]: increment(minutes),
+      },
+      { merge: true },
+    )
+
+    return { chunksAdded, newCarryMinutes }
   })
 
-  const monthRef = doc(db, 'users', uid, 'months', month)
-  batch.set(
-    monthRef,
-    {
-      [`days.${day}.total`]: increment(minutes),
-      [`days.${day}.byGoal.${goalId}`]: increment(minutes),
-    },
-    { merge: true },
-  )
-
-  await batch.commit()
   invalidateSessionWrite(uid, goalId, month)
-
-  return sessionRef.id
+  return { sessionId: sessionRef.id, chunksAdded, newCarryMinutes }
 }
 
-/** The inverse of logSession: deletes the session and reverses both increments. */
+/**
+ * The inverse of logSession: deletes the session, reverses the month/goal
+ * increments, and restores the goal's carryMinutes to exactly what it was
+ * before (session.carryBefore) rather than trying to reverse the modulo
+ * arithmetic, which would lose information.
+ */
 export async function undoSession(uid: string, sessionId: string): Promise<void> {
   const sessionRef = doc(db, 'users', uid, 'sessions', sessionId)
-  const snapshot = await getDoc(sessionRef)
-  if (!snapshot.exists()) return
 
-  const session = snapshot.data() as SessionData
-  const month = session.date.slice(0, 7)
-  const day = session.date.slice(8, 10)
+  const reversed = await runTransaction(db, async (tx) => {
+    const sessionSnap = await tx.get(sessionRef)
+    if (!sessionSnap.exists()) return null
+    const session = sessionSnap.data() as SessionData
 
-  const batch = writeBatch(db)
-  batch.delete(sessionRef)
+    const month = session.date.slice(0, 7)
+    const day = session.date.slice(8, 10)
+    const goalRef = doc(db, 'users', uid, 'goals', session.goalId)
+    const monthRef = doc(db, 'users', uid, 'months', month)
 
-  const goalRef = doc(db, 'users', uid, 'goals', session.goalId)
-  batch.update(goalRef, {
-    completedChunks: increment(-session.chunks),
-    updatedAt: serverTimestamp(),
+    tx.delete(sessionRef)
+
+    tx.update(goalRef, {
+      completedChunks: increment(-session.chunks),
+      carryMinutes: session.carryBefore,
+      updatedAt: serverTimestamp(),
+    })
+
+    tx.set(
+      monthRef,
+      {
+        [`days.${day}.total`]: increment(-session.minutes),
+        [`days.${day}.byGoal.${session.goalId}`]: increment(-session.minutes),
+      },
+      { merge: true },
+    )
+
+    return { goalId: session.goalId, month }
   })
 
-  const monthRef = doc(db, 'users', uid, 'months', month)
-  batch.set(
-    monthRef,
-    {
-      [`days.${day}.total`]: increment(-session.minutes),
-      [`days.${day}.byGoal.${session.goalId}`]: increment(-session.minutes),
-    },
-    { merge: true },
-  )
-
-  await batch.commit()
-  invalidateSessionWrite(uid, session.goalId, month)
+  if (reversed) {
+    invalidateSessionWrite(uid, reversed.goalId, reversed.month)
+  }
 }

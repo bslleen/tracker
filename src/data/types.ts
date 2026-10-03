@@ -20,10 +20,14 @@ export interface GoalData {
   totalMinutes: number
   chunkMinutes: number
   completedChunks: number
+  /** Minutes logged but not yet enough to complete another whole chunk. Always < chunkMinutes. */
+  carryMinutes: number
   status: GoalStatus
   carriedFrom?: string
   /** 0-30 hue shift within the accent green family */
   hue: number
+  /** Optional free-text note, e.g. "Andrew Ng ML — 48 videos". Never resolved against any API. */
+  playlistNote?: string
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -39,6 +43,8 @@ export interface SessionData {
   date: string
   minutes: number
   chunks: number
+  /** The goal's carryMinutes immediately before this session, so undo can restore it exactly. */
+  carryBefore: number
   at: Timestamp
 }
 

@@ -1,5 +1,5 @@
 import { AnimatedNumber } from '@/components/ui'
-import { chunkCount, chunksPerHour, nextMonth } from '@/lib/chunks'
+import { chunkCount, chunksPerHour, formatMonthLabel, nextMonth } from '@/lib/chunks'
 import { cn } from '@/lib/cn'
 import { ChunkGrid } from '../ChunkGrid'
 import { CHUNK_PRESETS, resolveChunkMinutes, type ChunkPreset, type NewGoalState } from '../newGoalState'
@@ -89,12 +89,4 @@ export function ChunksStep({
       </div>
     </div>
   )
-}
-
-function formatMonthLabel(month: string): string {
-  const [yearStr, monthStr] = month.split('-')
-  return new Date(Number(yearStr), Number(monthStr) - 1, 1).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  })
 }

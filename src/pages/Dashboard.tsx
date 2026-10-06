@@ -17,7 +17,11 @@ export default function Dashboard() {
     <div>
       <PageHeader title="Dashboard" description="Your goals this month." />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* isolate: so a card's z-raised token (while its shared layout transition is
+          animating) stacks above sibling cards without ever competing past this
+          grid's own boundary — see CLAUDE.md LAYERING RULES. No overflow/contain
+          here, or the morph would clip itself mid-animation. */}
+      <div className="isolate grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <AnimatePresence initial={false}>
           {goals?.map((goal) => (
             <GoalCard

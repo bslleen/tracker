@@ -15,6 +15,18 @@ export function percentComplete(completedChunks: number, totalChunks: number): n
   return Math.min(100, Math.max(0, (completedChunks / totalChunks) * 100))
 }
 
+/** Total minutes actually banked toward a goal, independent of chunk size. */
+export function minutesBanked(completedChunks: number, chunkMinutes: number, carryMinutes: number): number {
+  return completedChunks * chunkMinutes + carryMinutes
+}
+
+/** "12h 30m" (omits minutes when exact), e.g. for "12h 30m of 40h". */
+export function formatHoursMinutes(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = Math.round(totalMinutes % 60)
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`
+}
+
 /**
  * Minutes left to log. Computed from raw minutes rather than
  * `(totalChunks - completedChunks) * chunkMinutes` so a partial last chunk
@@ -70,6 +82,15 @@ export function nextMonth(month: string): string {
 export function currentMonth(): string {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+/** "2026-10" -> "October 2026". */
+export function formatMonthLabel(month: string): string {
+  const [yearStr, monthStr] = month.split('-')
+  return new Date(Number(yearStr), Number(monthStr) - 1, 1).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 export interface CarriedGoalData {

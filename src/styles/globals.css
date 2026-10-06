@@ -138,3 +138,69 @@ button {
     box-shadow: inset 0 1px 0 0 var(--hairline);
   }
 }
+
+/* Dashboard — see src/pages/Dashboard.tsx / src/features/goals/. */
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes ambient-chunk-glow {
+  0%,
+  100% {
+    background-color: var(--chunk-empty);
+    box-shadow: none;
+  }
+  50% {
+    background-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+}
+
+/* Focus Mode — see src/features/focus/. */
+@keyframes focus-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes focus-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes focus-particle {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--a)) translateY(calc(-1 * var(--dist))) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Year in Review story — see src/features/review/. */
+@keyframes story-progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

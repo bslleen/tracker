@@ -1,39 +1,55 @@
-import { AnimatePresence } from 'motion/react'
-import { useState } from 'react'
-import { PageHeader } from '@/components/PageHeader'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/data/useAuth'
 import { useGoals } from '@/data/useGoals'
-import { AddGoalCard } from '@/features/goals/AddGoalCard'
-import { GoalCard } from '@/features/goals/GoalCard'
+import { useMonthSummary } from '@/data/useMonthSummary'
+import { DashboardContent } from '@/features/goals/DashboardContent'
 import { NewGoalModal } from '@/features/goals/NewGoalModal'
-import { currentMonth } from '@/lib/chunks'
+import { MonthEndBanner } from '@/features/month/MonthEndBanner'
+import { useToday } from '@/hooks/useToday'
+import { currentMonth, previousMonth } from '@/lib/chunks'
+
+const ENTRANCE_PLAYED_KEY = 'chunks:dashboard-entrance-played'
 
 export default function Dashboard() {
+  const { user } = useAuth()
+  const today = useToday()
   const month = currentMonth()
-  const { data: goals } = useGoals(month)
+  const prevMonth = previousMonth(month)
+
+  const { data: goals, isLoading: isLoadingGoals } = useGoals(month)
+  const { data: monthSummary } = useMonthSummary(month)
+  const { data: prevMonthSummary } = useMonthSummary(prevMonth)
+
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [justCreatedGoalId, setJustCreatedGoalId] = useState<string | null>(null)
 
-  return (
-    <div>
-      <PageHeader title="Dashboard" description="Your goals this month." />
+  // The card-grid entrance stagger plays once per browser session, not on
+  // every visit to this route — a lazy initializer reads sessionStorage
+  // synchronously (same pattern as useDemoMode's getSnapshot), and the
+  // effect below marks it played for any later mount.
+  const [animateEntrance] = useState(() => sessionStorage.getItem(ENTRANCE_PLAYED_KEY) !== 'true')
+  useEffect(() => {
+    sessionStorage.setItem(ENTRANCE_PLAYED_KEY, 'true')
+  }, [])
 
-      {/* isolate: so a card's z-raised token (while its shared layout transition is
-          animating) stacks above sibling cards without ever competing past this
-          grid's own boundary — see CLAUDE.md LAYERING RULES. No overflow/contain
-          here, or the morph would clip itself mid-animation. */}
-      <div className="isolate grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <AnimatePresence initial={false}>
-          {goals?.map((goal) => (
-            <GoalCard
-              key={goal.id}
-              goal={goal}
-              justCreated={goal.id === justCreatedGoalId}
-              onPulseEnd={() => setJustCreatedGoalId(null)}
-            />
-          ))}
-        </AnimatePresence>
-        <AddGoalCard onClick={() => setIsCreateOpen(true)} />
-      </div>
+  return (
+    <div className="flex flex-col gap-6">
+      <MonthEndBanner />
+
+      <DashboardContent
+        goals={goals ?? []}
+        isLoadingGoals={isLoadingGoals}
+        monthSummary={monthSummary}
+        prevMonthSummary={prevMonthSummary}
+        month={month}
+        prevMonth={prevMonth}
+        today={today}
+        displayName={user?.displayName}
+        justCreatedGoalId={justCreatedGoalId}
+        onPulseEnd={() => setJustCreatedGoalId(null)}
+        onCreateGoal={() => setIsCreateOpen(true)}
+        animateEntrance={animateEntrance}
+      />
 
       <NewGoalModal
         open={isCreateOpen}

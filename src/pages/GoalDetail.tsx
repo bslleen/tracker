@@ -7,6 +7,7 @@ import { AnimatedNumber, Button } from '@/components/ui'
 import { deleteGoal, setGoalStatus } from '@/data/goalWrites'
 import { logSession, undoSession } from '@/data/sessionWrites'
 import { useAuth } from '@/data/useAuth'
+import { openFocusPicker } from '@/features/focus/focusPickerStore'
 import { cn } from '@/lib/cn'
 import { useGoal } from '@/data/useGoal'
 import { useMonthSummary } from '@/data/useMonthSummary'
@@ -164,7 +165,7 @@ export default function GoalDetail() {
 
       <div className="flex gap-3">
         <Button onClick={() => setIsLogOpen(true)}>Log time</Button>
-        <Button variant="ghost" onClick={() => toast('Focus mode lands in Phase 8.')}>
+        <Button variant="ghost" onClick={() => openFocusPicker(goal.id)}>
           Focus
         </Button>
       </div>

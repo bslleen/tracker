@@ -5,8 +5,11 @@ import {
   chunkCount,
   chunksPerHour,
   computeChunkProgress,
+  daysInMonth,
+  monthName,
   nextMonth,
   percentComplete,
+  previousMonth,
   remainingMinutes,
 } from './chunks'
 
@@ -109,6 +112,40 @@ describe('nextMonth', () => {
 
   it('pads single-digit months', () => {
     expect(nextMonth('2026-09')).toBe('2026-10')
+  })
+})
+
+describe('monthName', () => {
+  it('returns just the month name, no year', () => {
+    expect(monthName('2026-10')).toBe('October')
+  })
+})
+
+describe('previousMonth', () => {
+  it('decrements within a year', () => {
+    expect(previousMonth('2026-10')).toBe('2026-09')
+  })
+
+  it('rolls back into the previous year at January', () => {
+    expect(previousMonth('2026-01')).toBe('2025-12')
+  })
+})
+
+describe('daysInMonth', () => {
+  it('returns 31 for a 31-day month', () => {
+    expect(daysInMonth('2026-10')).toBe(31)
+  })
+
+  it('returns 30 for a 30-day month', () => {
+    expect(daysInMonth('2026-04')).toBe(30)
+  })
+
+  it('handles a leap-year February', () => {
+    expect(daysInMonth('2024-02')).toBe(29)
+  })
+
+  it('handles a non-leap-year February', () => {
+    expect(daysInMonth('2026-02')).toBe(28)
   })
 })
 

@@ -6,12 +6,14 @@ export interface AnimatedNumberProps {
   value: number
   className?: string
   format?: (value: number) => string
+  /** Tween duration in seconds — the default suits small incremental changes; a bigger "reveal" moment (e.g. a whole month's total) wants something slower. */
+  duration?: number
 }
 
 const defaultFormat = (value: number) => String(Math.round(value))
 
 /** A tabular-nums numeral that tweens between values instead of jumping. */
-export function AnimatedNumber({ value, className, format }: AnimatedNumberProps) {
+export function AnimatedNumber({ value, className, format, duration = 0.18 }: AnimatedNumberProps) {
   const nodeRef = useRef<HTMLSpanElement>(null)
   const previousValueRef = useRef(value)
   const formatRef = useRef(format ?? defaultFormat)
@@ -32,7 +34,7 @@ export function AnimatedNumber({ value, className, format }: AnimatedNumberProps
     }
 
     const controls = animate(previousValueRef.current, value, {
-      duration: 0.18,
+      duration,
       ease: [0.22, 1, 0.36, 1],
       onUpdate: (latest) => {
         node.textContent = render(latest)
@@ -41,7 +43,7 @@ export function AnimatedNumber({ value, className, format }: AnimatedNumberProps
     previousValueRef.current = value
 
     return () => controls.stop()
-  }, [value])
+  }, [value, duration])
 
   return (
     <span ref={nodeRef} className={cn('num', className)}>

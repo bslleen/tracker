@@ -6,6 +6,7 @@ import { AnimatedNumber, Button, IconButton } from '@/components/ui'
 import { logSession, undoSession } from '@/data/sessionWrites'
 import { useAuth } from '@/data/useAuth'
 import { useGoals } from '@/data/useGoals'
+import { openFocusPicker } from '@/features/focus/focusPickerStore'
 import { useLongPress } from '@/hooks/useLongPress'
 import { chunkCount, computeChunkProgress, currentMonth } from '@/lib/chunks'
 import { GoalPicker } from './GoalPicker'
@@ -146,7 +147,15 @@ export function LogTimeSheet({ open, onOpenChange, initialGoalId }: LogTimeSheet
             <Button onClick={() => void handleLog()} disabled={!selectedGoal || isLogging}>
               Log
             </Button>
-            <Button variant="ghost" onClick={() => toast('Focus timer lands in Phase 8.')}>
+            <Button
+              variant="ghost"
+              disabled={!selectedGoal}
+              onClick={() => {
+                if (!selectedGoal) return
+                onOpenChange(false)
+                openFocusPicker(selectedGoal.id)
+              }}
+            >
               Start focus timer
             </Button>
           </div>

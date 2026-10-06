@@ -1,11 +1,14 @@
-import { PageHeader } from '@/components/PageHeader'
-import { Stat } from '@/components/ui'
+import { useGoals } from '@/data/useGoals'
+import { useYearSummary } from '@/data/useYearSummary'
+import { HeatmapContent } from '@/features/heatmap/HeatmapContent'
+import { useToday } from '@/hooks/useToday'
+import { currentMonth } from '@/lib/chunks'
 
 export default function Heatmap() {
-  return (
-    <div>
-      <PageHeader title="Streaks" description="No data yet." />
-      <Stat value={0} label="day streak" />
-    </div>
-  )
+  const today = useToday()
+  const year = currentMonth().slice(0, 4)
+  const { data: monthDocs } = useYearSummary(year)
+  const { data: goals } = useGoals(currentMonth())
+
+  return <HeatmapContent year={year} monthDocs={monthDocs ?? []} goals={goals ?? []} today={today} />
 }

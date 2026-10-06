@@ -5,9 +5,9 @@ export function AddGoalCard({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-hairline p-6 text-text-2 transition-colors hover:text-text"
+      className="group flex min-h-[152px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-hairline p-6 text-text-2 transition-colors hover:border-white/20 hover:text-text"
     >
-      <PlusIcon />
+      <PlusIcon className="transition-transform duration-300 group-hover:rotate-90" />
       <span className="text-[length:var(--text-small)]">New goal</span>
     </button>
   )

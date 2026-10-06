@@ -78,6 +78,22 @@ export function nextMonth(month: string): string {
   return `${year}-${String(monthNum + 1).padStart(2, '0')}`
 }
 
+export function previousMonth(month: string): string {
+  const [yearStr, monthStr] = month.split('-')
+  const year = Number(yearStr)
+  const monthNum = Number(monthStr)
+  if (monthNum === 1) {
+    return `${year - 1}-12`
+  }
+  return `${year}-${String(monthNum - 1).padStart(2, '0')}`
+}
+
+/** "2026-02" -> 28. Driven by the JS Date day-0-of-next-month trick rather than a leap-year table. */
+export function daysInMonth(month: string): number {
+  const [yearStr, monthStr] = month.split('-')
+  return new Date(Number(yearStr), Number(monthStr), 0).getDate()
+}
+
 /** "2026-10" for today's date. */
 export function currentMonth(): string {
   const now = new Date()
@@ -91,6 +107,12 @@ export function formatMonthLabel(month: string): string {
     month: 'long',
     year: 'numeric',
   })
+}
+
+/** "2026-10" -> "October" (no year — for the banner/reveal header, where the year is implied). */
+export function monthName(month: string): string {
+  const [yearStr, monthStr] = month.split('-')
+  return new Date(Number(yearStr), Number(monthStr) - 1, 1).toLocaleDateString('en-US', { month: 'long' })
 }
 
 export interface CarriedGoalData {

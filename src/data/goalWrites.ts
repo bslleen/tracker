@@ -35,6 +35,8 @@ export async function createGoal(input: CreateGoalInput): Promise<string> {
 
   await setDoc(goalRef, goal)
   invalidate(`goals:${input.uid}:${input.month}`)
+  invalidate(`overdue-goals:${input.uid}`)
+  invalidate(`year-goals:${input.uid}:${input.month.slice(0, 4)}`)
 
   return goalRef.id
 }
@@ -77,10 +79,14 @@ export async function setGoalStatus(uid: string, goalId: string, month: string, 
   await updateDoc(goalRef, { status, updatedAt: serverTimestamp() })
   invalidate(`goal:${uid}:${goalId}`)
   invalidate(`goals:${uid}:${month}`)
+  invalidate(`overdue-goals:${uid}`)
+  invalidate(`year-goals:${uid}:${month.slice(0, 4)}`)
 }
 
 export async function deleteGoal(uid: string, goalId: string, month: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'goals', goalId))
   invalidate(`goal:${uid}:${goalId}`)
   invalidate(`goals:${uid}:${month}`)
+  invalidate(`overdue-goals:${uid}`)
+  invalidate(`year-goals:${uid}:${month.slice(0, 4)}`)
 }

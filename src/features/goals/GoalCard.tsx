@@ -2,7 +2,7 @@ import { motion } from 'motion/react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Goal } from '@/data/types'
-import { AnimatedNumber, ProgressRing } from '@/components/ui'
+import { AnimatedNumber, ProgressRing, Tooltip } from '@/components/ui'
 import { chunkCount, formatHoursMinutes, minutesBanked, percentComplete } from '@/lib/chunks'
 import { cn } from '@/lib/cn'
 import { shiftAccentHue } from '@/lib/color'
@@ -15,6 +15,10 @@ export interface GoalCardProps {
   onPulseEnd?: () => void
   /** Overrides the link target (default `/goals/${goal.id}`) — lets the styleguide mount a fixture-backed detail route elsewhere. */
   linkTo?: string
+  /** Set to false to skip the mount fade/rise entirely — the dashboard only wants it on its first render per session. */
+  animateEntrance?: boolean
+  /** Stagger index for the entrance transition's delay (60ms per step). Ignored when animateEntrance is false. */
+  entranceIndex?: number
 }
 
 /**
@@ -35,7 +39,14 @@ export interface GoalCardProps {
  * glitches, simplify" in the brief. It just crossfades with the rest of the
  * shell's content instead.
  */
-export function GoalCard({ goal, justCreated = false, onPulseEnd, linkTo }: GoalCardProps) {
+export function GoalCard({
+  goal,
+  justCreated = false,
+  onPulseEnd,
+  linkTo,
+  animateEntrance = true,
+  entranceIndex = 0,
+}: GoalCardProps) {
   const total = chunkCount(goal.totalMinutes, goal.chunkMinutes)
   const percent = percentComplete(goal.completedChunks, total)
   const banked = minutesBanked(goal.completedChunks, goal.chunkMinutes, goal.carryMinutes)
@@ -45,8 +56,12 @@ export function GoalCard({ goal, justCreated = false, onPulseEnd, linkTo }: Goal
     <motion.div
       layout
       layoutId={`goal-shell-${goal.id}`}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={animateEntrance ? { opacity: 0, y: 12 } : false}
+      animate={{
+        opacity: 1,
+        y: 0,
+        transition: { type: 'spring', stiffness: 380, damping: 32, delay: animateEntrance ? entranceIndex * 0.06 : 0 },
+      }}
       exit={{ opacity: 0, y: -8 }}
       whileHover={{ y: -2 }}
       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
@@ -73,9 +88,11 @@ export function GoalCard({ goal, justCreated = false, onPulseEnd, linkTo }: Goal
       />
 
       <Link to={linkTo ?? `/goals/${goal.id}`} className="flex flex-col gap-4 @sm:flex-row @sm:items-center @sm:gap-6">
-        <div className="order-1 flex flex-col gap-1">
-          <h3 className="text-[length:var(--text-body)] font-medium text-text">{goal.name}</h3>
-          <span className="text-[length:var(--text-small)] text-text-2">
+        <div className="order-1 flex min-w-0 flex-col gap-1">
+          <Tooltip content={goal.name}>
+            <h3 className="truncate text-[length:var(--text-body)] font-medium text-text">{goal.name}</h3>
+          </Tooltip>
+          <span className="truncate text-[length:var(--text-small)] text-text-2">
             {formatHoursMinutes(banked)} of {formatHoursMinutes(goal.totalMinutes)}
           </span>
         </div>

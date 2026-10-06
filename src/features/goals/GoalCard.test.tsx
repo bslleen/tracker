@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import type { Goal } from '@/data/types'
+import { TooltipProvider } from '@/components/ui'
 import { GoalCard } from './GoalCard'
 
 const goal: Goal = {
@@ -22,7 +23,9 @@ describe('GoalCard', () => {
   it('renders the goal name, progress, and a link to the detail page', () => {
     render(
       <MemoryRouter>
-        <GoalCard goal={goal} />
+        <TooltipProvider>
+          <GoalCard goal={goal} />
+        </TooltipProvider>
       </MemoryRouter>,
     )
 

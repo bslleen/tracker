@@ -1,10 +1,16 @@
+import { CommandPalette } from '@/components/CommandPalette'
+import { FocusMode } from '@/features/focus/FocusMode'
+import { FocusStartSheet } from '@/features/focus/FocusStartSheet'
 import { AnimatedRoutes } from './AnimatedRoutes'
 import { Navigation } from './navigation/Navigation'
 
 /**
  * Three regions inside #app-root, nothing else: Navigation, the scrolling
  * <main>, and that's it. All floating UI portals out via #overlay-root /
- * #toast-root (CLAUDE.md LAYERING RULES #3).
+ * #toast-root (CLAUDE.md LAYERING RULES #3). FocusMode/FocusStartSheet/
+ * CommandPalette are mounted once here (not inside individual pages) since
+ * they're triggered from several unrelated trees and must render above
+ * everything including Navigation, regardless of which page is active.
  */
 export function AppShell() {
   return (
@@ -15,6 +21,9 @@ export function AppShell() {
       >
         <AnimatedRoutes />
       </main>
+      <CommandPalette />
+      <FocusStartSheet />
+      <FocusMode />
     </>
   )
 }

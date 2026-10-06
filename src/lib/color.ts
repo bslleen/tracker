@@ -68,3 +68,16 @@ export function shiftColorHue(color: RgbColor, shiftDeg: number): string {
   const { r, g, b } = hslToRgb((hsl.h + shiftDeg + 360) % 360, hsl.s, hsl.l)
   return `rgb(${r}, ${g}, ${b})`
 }
+
+/**
+ * A hue-shifted accent blended at `alphaPercent` over --chunk-empty — the
+ * heatmap's 5-level intensity scale. Uses `color-mix()` (plain percentage
+ * literals, no `calc()`) rather than CSS relative-color syntax: unrelated to
+ * the `hsl(from ...)` bug above, but kept consistent with this file's
+ * established "compute the color, hand CSS a finished value" approach.
+ */
+export function accentOverlayColor(hueShiftDeg: number, alphaPercent: number): string {
+  if (alphaPercent <= 0) return 'var(--chunk-empty)'
+  if (alphaPercent >= 100) return shiftAccentHue(hueShiftDeg)
+  return `color-mix(in srgb, ${shiftAccentHue(hueShiftDeg)} ${alphaPercent}%, var(--chunk-empty))`
+}

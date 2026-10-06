@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui'
 
 const Styleguide = lazy(() => import('./pages/Styleguide'))
 const StyleguideGrid = lazy(() => import('./pages/StyleguideGrid'))
+const StyleguideGoalCard = lazy(() => import('./pages/StyleguideGoalCard'))
 
 function App() {
   return (
@@ -27,6 +28,16 @@ function App() {
             element={
               <Suspense fallback={null}>
                 <StyleguideGrid />
+              </Suspense>
+            }
+          />
+        )}
+        {import.meta.env.DEV && (
+          <Route
+            path="/styleguide/goal-card/*"
+            element={
+              <Suspense fallback={null}>
+                <StyleguideGoalCard />
               </Suspense>
             }
           />

@@ -5,6 +5,7 @@ import type { Goal } from '@/data/types'
 import { AnimatedNumber, ProgressRing } from '@/components/ui'
 import { chunkCount, formatHoursMinutes, minutesBanked, percentComplete } from '@/lib/chunks'
 import { cn } from '@/lib/cn'
+import { shiftAccentHue } from '@/lib/color'
 import { ChunkGrid } from './ChunkGrid'
 
 export interface GoalCardProps {
@@ -12,6 +13,8 @@ export interface GoalCardProps {
   /** Plays a one-time soft accent pulse, then calls onPulseEnd. */
   justCreated?: boolean
   onPulseEnd?: () => void
+  /** Overrides the link target (default `/goals/${goal.id}`) — lets the styleguide mount a fixture-backed detail route elsewhere. */
+  linkTo?: string
 }
 
 /**
@@ -32,7 +35,7 @@ export interface GoalCardProps {
  * glitches, simplify" in the brief. It just crossfades with the rest of the
  * shell's content instead.
  */
-export function GoalCard({ goal, justCreated = false, onPulseEnd }: GoalCardProps) {
+export function GoalCard({ goal, justCreated = false, onPulseEnd, linkTo }: GoalCardProps) {
   const total = chunkCount(goal.totalMinutes, goal.chunkMinutes)
   const percent = percentComplete(goal.completedChunks, total)
   const banked = minutesBanked(goal.completedChunks, goal.chunkMinutes, goal.carryMinutes)
@@ -63,13 +66,13 @@ export function GoalCard({ goal, justCreated = false, onPulseEnd }: GoalCardProp
       <motion.div
         aria-hidden="true"
         className="absolute top-0 left-0 h-[2px] w-full rounded-t-xl"
-        style={{ transformOrigin: 'left', backgroundColor: `hsl(from var(--accent) calc(h + ${goal.hue}deg) s l)` }}
+        style={{ transformOrigin: 'left', backgroundColor: shiftAccentHue(goal.hue) }}
         initial={{ scaleX: 0 }}
         animate={{ scaleX: percent / 100 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       />
 
-      <Link to={`/goals/${goal.id}`} className="flex flex-col gap-4 @sm:flex-row @sm:items-center @sm:gap-6">
+      <Link to={linkTo ?? `/goals/${goal.id}`} className="flex flex-col gap-4 @sm:flex-row @sm:items-center @sm:gap-6">
         <div className="order-1 flex flex-col gap-1">
           <h3 className="text-[length:var(--text-body)] font-medium text-text">{goal.name}</h3>
           <span className="text-[length:var(--text-small)] text-text-2">

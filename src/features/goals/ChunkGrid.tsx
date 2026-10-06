@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { useContainerWidth } from '@/hooks/useContainerWidth'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { shiftAccentHue } from '@/lib/color'
 import { getOverlayRoot } from '@/lib/overlay-root'
 import { cn } from '@/lib/cn'
 import { ChunkCell } from './ChunkCell'
@@ -91,7 +92,7 @@ export function ChunkGrid({
 function MiniChunkGrid({
   total,
   completed,
-  accentShade,
+  accentShade = 0,
   className,
 }: Pick<ChunkGridProps, 'total' | 'completed' | 'accentShade' | 'className'>) {
   const prefersReducedMotion = useReducedMotion()
@@ -110,7 +111,7 @@ function MiniChunkGrid({
             key={index}
             className={cn('aspect-square rounded-[2px]', !filled && 'bg-chunk-empty')}
             style={{
-              backgroundColor: filled ? `hsl(from var(--accent) calc(h + ${accentShade}deg) s l)` : undefined,
+              backgroundColor: filled ? shiftAccentHue(accentShade) : undefined,
               animation: prefersReducedMotion ? undefined : 'chunk-pop-in 180ms var(--ease-out) backwards',
               animationDelay: prefersReducedMotion ? undefined : `${Math.min(index, 40) * 3}ms`,
             }}
@@ -154,7 +155,6 @@ function FullChunkGrid({
     size === 'lg' ? { ...layout, cellSize: Math.min(32, Math.max(16, layout.cellSize * 1.2)) } : layout
 
   const showHourLabels = effectiveLayout.rowsPerHour !== null && containerWidth >= HOUR_LABEL_MIN_CONTAINER_WIDTH
-  const labelGutter = showHourLabels ? 28 : 0
 
   // "Adjust state when a prop changes" (React's documented pattern) rather
   // than an effect: the previous `completed` is needed synchronously, in
@@ -377,33 +377,45 @@ function FullChunkGrid({
 
   return (
     <div ref={outerRef} className={cn('@container relative', className)}>
-      {showHourLabels && (
-        <div className="pointer-events-none absolute top-0 left-0 w-6 text-[length:var(--text-small)] text-text-2">
-          {buildHourLabels(total, effectiveLayout).map(({ hour, top }) => (
-            <span key={hour} className="absolute" style={{ top }}>
-              {hour}h
-            </span>
-          ))}
-        </div>
-      )}
+      {/*
+        Centered as one unit (labels + grid together), not left-stuck: when
+        hour-alignment caps the cell size (e.g. a wide container but a chunk
+        size whose largest hour-aligned column count still fits comfortably
+        under 26-32px), the grid is narrower than the space it's given, and
+        without this it would hug the left edge with a lopsided empty gap on
+        the right — found via an actual screenshot, not by inspection.
+      */}
+      <div className="flex justify-center">
+        <div className="flex items-start">
+          {showHourLabels && (
+            <div
+              className="relative mr-2 w-6 shrink-0 text-[length:var(--text-small)] text-text-2"
+              style={{ height: Math.ceil(Math.max(0, total) / effectiveLayout.columns) * (effectiveLayout.cellSize + effectiveLayout.gap) }}
+            >
+              {buildHourLabels(total, effectiveLayout).map(({ hour, top }) => (
+                <span key={hour} className="absolute left-0" style={{ top }}>
+                  {hour}h
+                </span>
+              ))}
+            </div>
+          )}
 
-      <div
-        ref={gridRef}
-        role={interactive ? 'grid' : 'img'}
-        aria-label={label ? `${label}: ${completed} of ${total} chunks completed` : `${completed} of ${total} chunks completed`}
-        className="isolate grid"
-        style={{
-          gridTemplateColumns: `repeat(${effectiveLayout.columns}, ${effectiveLayout.cellSize}px)`,
-          gap: effectiveLayout.gap,
-          marginLeft: labelGutter,
-        }}
-        onClick={handleClick}
-        onPointerDown={handlePointerDown}
-        onPointerUp={clearLongPress}
-        onPointerLeave={clearLongPress}
-        onKeyDown={interactive ? handleKeyDown : undefined}
-      >
-        {Array.from({ length: Math.max(0, total) }, (_, index) => {
+          <div
+            ref={gridRef}
+            role={interactive ? 'grid' : 'img'}
+            aria-label={label ? `${label}: ${completed} of ${total} chunks completed` : `${completed} of ${total} chunks completed`}
+            className="isolate grid"
+            style={{
+              gridTemplateColumns: `repeat(${effectiveLayout.columns}, ${effectiveLayout.cellSize}px)`,
+              gap: effectiveLayout.gap,
+            }}
+            onClick={handleClick}
+            onPointerDown={handlePointerDown}
+            onPointerUp={clearLongPress}
+            onPointerLeave={clearLongPress}
+            onKeyDown={interactive ? handleKeyDown : undefined}
+          >
+            {Array.from({ length: Math.max(0, total) }, (_, index) => {
           const filled = index < completed
           const isNext = interactive && index === completed && index < total
           const isGlowing = index >= completed - GLOW_WINDOW && index < completed
@@ -430,6 +442,8 @@ function FullChunkGrid({
             />
           )
         })}
+          </div>
+        </div>
       </div>
 
       {interactive && (

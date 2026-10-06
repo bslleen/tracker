@@ -1,5 +1,6 @@
 import { useAnimate } from 'motion/react'
 import { memo, useEffect, useState } from 'react'
+import { shiftAccentHue } from '@/lib/color'
 import { cn } from '@/lib/cn'
 
 export interface ChunkCellProps {
@@ -77,7 +78,7 @@ export const ChunkCell = memo(
           height: cellSize,
           marginBottom,
           transitionDuration: 'var(--duration-base)',
-          backgroundColor: filled ? `hsl(from var(--accent) calc(h + ${hueShiftDeg}deg) s l)` : undefined,
+          backgroundColor: filled ? shiftAccentHue(hueShiftDeg) : undefined,
           boxShadow: isGlowing ? '0 0 12px var(--accent-glow)' : isNext ? 'inset 0 0 0 1px var(--accent)' : undefined,
           animation: isNext && !prefersReducedMotion ? 'chunk-breathe 2.4s ease-in-out infinite' : undefined,
           transform: 'scale(calc(1 + 0.35 * var(--prox, 0)))',

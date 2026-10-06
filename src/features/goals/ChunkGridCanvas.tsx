@@ -2,6 +2,7 @@ import { useEffect, useRef, type MouseEvent } from 'react'
 import { useContainerWidth } from '@/hooks/useContainerWidth'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/cn'
+import { shiftColorHue } from '@/lib/color'
 import { computeChunkGridLayout } from './chunkGridLayout'
 
 export interface ChunkGridCanvasProps {
@@ -84,7 +85,7 @@ export function ChunkGridCanvas({
         ctx.shadowBlur = 8
       }
 
-      ctx.fillStyle = filled ? shiftHue(accentColor, accentShade) : emptyColor
+      ctx.fillStyle = filled ? shiftAccentColorForCanvas(accentColor, accentShade) : emptyColor
       drawRoundedRect(ctx, x, y, layout.cellSize, layout.cellSize, radius)
       ctx.fill()
 
@@ -139,15 +140,12 @@ function getComputedColor(el: HTMLElement, variable: string): string {
   return getComputedStyle(el).getPropertyValue(variable).trim() || '#000000'
 }
 
-/** Approximates the CSS `hsl(from var(--accent) calc(h + Ndeg) s l)` hue shift used by the DOM renderer, for canvas. */
-function shiftHue(color: string, shiftDeg: number): string {
+/** --accent read from computed style (so a future theme change is picked up) and shifted via the shared color math. */
+function shiftAccentColorForCanvas(color: string, shiftDeg: number): string {
   if (shiftDeg === 0) return color
   const rgb = parseColor(color)
   if (!rgb) return color
-  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b)
-  const shifted = { ...hsl, h: (hsl.h + shiftDeg + 360) % 360 }
-  const { r, g, b } = hslToRgb(shifted.h, shifted.s, shifted.l)
-  return `rgb(${r}, ${g}, ${b})`
+  return shiftColorHue(rgb, shiftDeg)
 }
 
 function parseColor(color: string): { r: number; g: number; b: number } | null {
@@ -159,38 +157,4 @@ function parseColor(color: string): { r: number; g: number; b: number } | null {
   const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(computed)
   if (!match?.[1] || !match[2] || !match[3]) return null
   return { r: Number.parseInt(match[1], 16), g: Number.parseInt(match[2], 16), b: Number.parseInt(match[3], 16) }
-}
-
-function rgbToHsl(r: number, g: number, b: number) {
-  const rn = r / 255
-  const gn = g / 255
-  const bn = b / 255
-  const max = Math.max(rn, gn, bn)
-  const min = Math.min(rn, gn, bn)
-  const l = (max + min) / 2
-  if (max === min) return { h: 0, s: 0, l }
-
-  const d = max - min
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-  let h: number
-  if (max === rn) h = ((gn - bn) / d) % 6
-  else if (max === gn) h = (bn - rn) / d + 2
-  else h = (rn - gn) / d + 4
-  h *= 60
-  if (h < 0) h += 360
-  return { h, s, l }
-}
-
-function hslToRgb(h: number, s: number, l: number) {
-  const c = (1 - Math.abs(2 * l - 1)) * s
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
-  const m = l - c / 2
-  let r: number, g: number, b: number
-  if (h < 60) [r, g, b] = [c, x, 0]
-  else if (h < 120) [r, g, b] = [x, c, 0]
-  else if (h < 180) [r, g, b] = [0, c, x]
-  else if (h < 240) [r, g, b] = [0, x, c]
-  else if (h < 300) [r, g, b] = [x, 0, c]
-  else [r, g, b] = [c, 0, x]
-  return { r: Math.round((r + m) * 255), g: Math.round((g + m) * 255), b: Math.round((b + m) * 255) }
 }

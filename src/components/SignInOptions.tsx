@@ -22,7 +22,8 @@ export function SignInOptions({ onSuccess, googleLabel = 'Continue with Google',
     try {
       const credential = await signInWithGoogle()
       onSuccess?.(credential.user.uid)
-    } catch {
+    } catch (err) {
+      console.error('Google sign-in failed:', err)
       setError('Could not sign in with Google. Try again.')
     } finally {
       setPending(null)
@@ -35,7 +36,8 @@ export function SignInOptions({ onSuccess, googleLabel = 'Continue with Google',
     try {
       const credential = await signInAsGuest()
       onSuccess?.(credential.user.uid)
-    } catch {
+    } catch (err) {
+      console.error('Guest sign-in failed:', err)
       setError('Could not start a session. Try again.')
     } finally {
       setPending(null)

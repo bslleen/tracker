@@ -53,7 +53,8 @@ export function NewGoalWizard({ existingGoalCount, onCreated, onCancel }: NewGoa
         playlistNote: state.playlistNote.trim() || undefined,
       })
       onCreated(goalId)
-    } catch {
+    } catch (err) {
+      console.error('Create goal failed:', err)
       setError('Could not create the goal. Try again.')
       setIsSubmitting(false)
     }

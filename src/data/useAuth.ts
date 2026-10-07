@@ -34,13 +34,31 @@ export function useAuth(): AuthState {
     let unsubscribe: (() => void) | undefined
     let cancelled = false
 
-    void Promise.all([getFirebaseAuth(), import('firebase/auth')]).then(([auth, { onAuthStateChanged }]) => {
-      if (cancelled) return
-      unsubscribe = onAuthStateChanged(auth, (nextUser) => {
-        setUser(nextUser)
-        setIsLoading(false)
+    void Promise.all([getFirebaseAuth(), import('firebase/auth')])
+      .then(([auth, { onAuthStateChanged }]) => {
+        if (cancelled) return
+        unsubscribe = onAuthStateChanged(
+          auth,
+          (nextUser) => {
+            setUser(nextUser)
+            setIsLoading(false)
+          },
+          (error) => {
+            // Misconfigured Firebase (e.g. missing/invalid env vars) must not
+            // leave isLoading stuck true forever — that renders as a blank
+            // screen with no way forward. Fall through to the sign-in gate.
+            console.error('Firebase auth state error:', error)
+            if (!cancelled) setIsLoading(false)
+          },
+        )
       })
-    })
+      .catch((error) => {
+        // getFirebaseAuth()/import('firebase/auth') itself can reject (e.g.
+        // auth/invalid-api-key thrown synchronously by getAuth()) before
+        // onAuthStateChanged is ever attached — same fix applies here.
+        console.error('Failed to initialize Firebase auth:', error)
+        if (!cancelled) setIsLoading(false)
+      })
 
     return () => {
       cancelled = true

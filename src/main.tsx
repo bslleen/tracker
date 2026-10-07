@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { LazyAmbientBackgroundPortal } from './components/LazyAmbientBackgroundPortal.tsx'
 import { ToastPortal } from './components/ToastPortal.tsx'
 import { LenisProvider } from './lib/lenis.tsx'
@@ -17,12 +18,14 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <LazyAmbientBackgroundPortal />
-    <BrowserRouter>
-      <LenisProvider>
-        <App />
-      </LenisProvider>
-    </BrowserRouter>
-    <ToastPortal />
+    <ErrorBoundary>
+      <LazyAmbientBackgroundPortal />
+      <BrowserRouter>
+        <LenisProvider>
+          <App />
+        </LenisProvider>
+      </BrowserRouter>
+      <ToastPortal />
+    </ErrorBoundary>
   </StrictMode>,
 )

@@ -98,7 +98,8 @@ export default function Styleguide() {
 
       <Drawer.Root open={drawerOpen} onOpenChange={setDrawerOpen} container={getOverlayRoot()} modal={false}>
         <Drawer.Portal>
-          <Drawer.Overlay className="z-modal fixed inset-0 bg-black/60" />
+          {/* vaul's own Overlay hard-returns null when modal={false} (see ResponsiveModal.tsx) — a plain div instead. */}
+          {drawerOpen && <div aria-hidden="true" className="z-modal fixed inset-0 bg-black/60" />}
           <Drawer.Content className="z-modal fixed inset-x-0 bottom-0 rounded-t-xl border border-hairline bg-surface-2 p-6">
             <Drawer.Title className="text-title text-text">Drawer (z-modal)</Drawer.Title>
             <p className="mt-2 text-[length:var(--text-small)] text-text-2">

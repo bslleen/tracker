@@ -138,7 +138,25 @@ export function ResponsiveModal({
       snapPoints={mobileFullHeight ? undefined : [0.5, 1]}
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="z-overlay fixed inset-0 bg-black/60" />
+        {/*
+          Not vaul's own <Drawer.Overlay>: it hard-codes `if (!modal) return
+          null` (node_modules/vaul/dist/index.js), so with `modal={false}`
+          above — required so useOverlayLock stays the single source of
+          truth for scroll-lock instead of fighting vaul's own — it never
+          rendered at all. Every mobile sheet (LogTimeSheet, FocusStartSheet,
+          the mobile command palette, …) was opening with zero backdrop
+          scrim. A plain div sidesteps vaul's gate entirely and matches the
+          desktop Dialog.Overlay above.
+        */}
+        {open && (
+          <motion.div
+            aria-hidden="true"
+            className="z-overlay fixed inset-0 bg-black/60"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18 }}
+          />
+        )}
         <Drawer.Content
           className={cn(
             'z-modal fixed inset-x-0 bottom-0 flex flex-col rounded-t-xl border border-hairline bg-surface p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]',

@@ -1,6 +1,7 @@
 import * as Popover from '@radix-ui/react-popover'
 import { motion, useReducedMotion } from 'motion/react'
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { SegmentedToggle } from '@/components/ui'
 import { useContainerWidth } from '@/hooks/useContainerWidth'
 import { buildLineAreaPaths } from '@/lib/chartPaths'
@@ -167,9 +168,16 @@ export function SleepChart({ points, range, onRangeChange, targetHours = DEFAULT
         <p className="sr-only">{summary}</p>
 
         <Popover.Root open={hoverPoint !== null}>
-          <Popover.Anchor asChild>
-            <span className="pointer-events-none fixed" style={{ left: anchor.x, top: anchor.y }} />
-          </Popover.Anchor>
+          {/* Portaled to #overlay-root so this `position: fixed` anchor stays
+              relative to the viewport even if a future ancestor gets an
+              animated transform — see the identical note in ChunkGrid.tsx,
+              where this exact pattern is already broken by one. */}
+          {createPortal(
+            <Popover.Anchor asChild>
+              <span className="pointer-events-none fixed" style={{ left: anchor.x, top: anchor.y }} />
+            </Popover.Anchor>,
+            getOverlayRoot(),
+          )}
           {hoverPoint && (
             <Popover.Portal container={getOverlayRoot()}>
               <Popover.Content

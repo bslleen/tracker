@@ -1,5 +1,6 @@
 import * as Popover from '@radix-ui/react-popover'
 import { useReducedMotion } from 'motion/react'
+import { createPortal } from 'react-dom'
 import {
   useEffect,
   useRef,
@@ -461,9 +462,25 @@ function FullChunkGrid({
 
       {popover && (
         <Popover.Root open onOpenChange={(open) => !open && setPopover(null)}>
-          <Popover.Anchor asChild>
-            <span className="pointer-events-none fixed" style={{ left: popover.x, top: popover.y }} />
-          </Popover.Anchor>
+          {/*
+            Portaled to #overlay-root, not rendered in place: this anchor is
+            `position: fixed` at the pointer's viewport coordinates, but on
+            GoalDetail this component sits inside a `motion.div layout
+            layoutId` wrapper (the card<->detail shared transition). Motion's
+            layout projection keeps a near-identity transform matrix on that
+            wrapper even at rest, which makes it — not the viewport — the
+            containing block for any `position: fixed` descendant, silently
+            offsetting this anchor by however much that matrix differs from
+            identity. #overlay-root has no transformed ancestors, so the fix
+            is to never let this anchor render inside the transformed tree
+            in the first place (CLAUDE.md LAYERING RULES #5).
+          */}
+          {createPortal(
+            <Popover.Anchor asChild>
+              <span className="pointer-events-none fixed" style={{ left: popover.x, top: popover.y }} />
+            </Popover.Anchor>,
+            getOverlayRoot(),
+          )}
           <Popover.Portal container={getOverlayRoot()}>
             <Popover.Content
               side="top"

@@ -2,6 +2,7 @@ import { useAnimate } from 'motion/react'
 import { memo, useEffect, useState } from 'react'
 import { shiftAccentHue } from '@/lib/color'
 import { cn } from '@/lib/cn'
+import { SPRING_BOUNCY } from '@/lib/motion'
 
 export interface ChunkCellProps {
   index: number
@@ -56,8 +57,8 @@ export const ChunkCell = memo(
     useEffect(() => {
       if (!justChanged || prefersReducedMotion) return
       const controls = filled
-        ? animate(scope.current, { scale: [0.6, 1] }, { type: 'spring', stiffness: 420, damping: 25, delay: delayMs / 1000 })
-        : animate(scope.current, { scale: [1, 0.9, 1] }, { type: 'spring', stiffness: 500, damping: 40 })
+        ? animate(scope.current, { scale: [0.6, 1] }, { ...SPRING_BOUNCY, delay: delayMs / 1000 })
+        : animate(scope.current, { scale: [1, 0.9, 1] }, SPRING_BOUNCY)
       return () => controls.stop()
       // Only the fact that it JUST changed should retrigger this — delayMs
       // and `animate`/`scope` are stable for the lifetime of this trigger.
@@ -68,10 +69,10 @@ export const ChunkCell = memo(
       <div
         ref={scope}
         data-chunk-index={index}
-        role="gridcell"
-        aria-label={label}
-        aria-selected={filled}
-        tabIndex={tabbable ? 0 : -1}
+        role={interactive ? 'option' : undefined}
+        aria-label={interactive ? label : undefined}
+        aria-selected={interactive ? filled : undefined}
+        tabIndex={interactive ? (tabbable ? 0 : -1) : undefined}
         className={cn('relative rounded-[28%] transition-colors', !filled && 'bg-chunk-empty', interactive && 'cursor-pointer')}
         style={{
           width: cellSize,

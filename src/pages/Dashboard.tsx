@@ -4,6 +4,7 @@ import { useGoals } from '@/data/useGoals'
 import { useMonthSummary } from '@/data/useMonthSummary'
 import { DashboardContent } from '@/features/goals/DashboardContent'
 import { NewGoalModal } from '@/features/goals/NewGoalModal'
+import { newGoalModalStore } from '@/features/goals/newGoalModalStore'
 import { MonthEndBanner } from '@/features/month/MonthEndBanner'
 import { useToday } from '@/hooks/useToday'
 import { currentMonth, previousMonth } from '@/lib/chunks'
@@ -20,7 +21,9 @@ export default function Dashboard() {
   const { data: monthSummary } = useMonthSummary(month)
   const { data: prevMonthSummary } = useMonthSummary(prevMonth)
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isLocalCreateOpen, setIsLocalCreateOpen] = useState(false)
+  const isGlobalCreateOpen = newGoalModalStore.useIsOpen()
+  const isCreateOpen = isLocalCreateOpen || isGlobalCreateOpen
   const [justCreatedGoalId, setJustCreatedGoalId] = useState<string | null>(null)
 
   // The card-grid entrance stagger plays once per browser session, not on
@@ -47,13 +50,16 @@ export default function Dashboard() {
         displayName={user?.displayName}
         justCreatedGoalId={justCreatedGoalId}
         onPulseEnd={() => setJustCreatedGoalId(null)}
-        onCreateGoal={() => setIsCreateOpen(true)}
+        onCreateGoal={() => setIsLocalCreateOpen(true)}
         animateEntrance={animateEntrance}
       />
 
       <NewGoalModal
         open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
+        onOpenChange={(open) => {
+          setIsLocalCreateOpen(open)
+          if (!open) newGoalModalStore.close()
+        }}
         onCreated={(goalId) => setJustCreatedGoalId(goalId)}
       />
     </div>

@@ -22,7 +22,7 @@ test('renders streak stats, filter chips, range toggle, and the grid', async ({ 
   await expect(page.getByText('active days')).toBeVisible()
   await expect(page.getByRole('button', { name: 'All goals' })).toBeVisible()
   await expect(page.getByRole('button', { name: '6 months' })).toBeVisible()
-  await expect(page.getByRole('img', { name: /Study heatmap/ })).toBeVisible()
+  await expect(page.getByRole('group', { name: /Study heatmap/ })).toBeVisible()
 })
 
 test('shows 5 distinct intensity levels', async ({ page }) => {

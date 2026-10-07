@@ -68,6 +68,7 @@ export function HeatmapContent({ year, monthDocs, goals, today }: HeatmapContent
           onSelectDate={setSelectedDate}
           goalNameFor={goalNameFor}
           prefersReducedMotion={prefersReducedMotion}
+          summary={`Studied on ${activeDays} day${activeDays === 1 ? '' : 's'} in ${year}, currently on a ${currentStreak}-day run, best run so far ${longestStreak} day${longestStreak === 1 ? '' : 's'}.`}
         />
       </div>
 

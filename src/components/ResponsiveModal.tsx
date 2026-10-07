@@ -1,12 +1,12 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { AnimatePresence, motion } from 'motion/react'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Drawer } from 'vaul'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useOverlayLock } from '@/hooks/useOverlayLock'
+import { cn } from '@/lib/cn'
+import { SPRING_SNAPPY } from '@/lib/motion'
 import { getOverlayRoot } from '@/lib/overlay-root'
-
-const SPRING = { type: 'spring', stiffness: 380, damping: 32 } as const
 
 export interface ResponsiveModalProps {
   open: boolean
@@ -14,6 +14,12 @@ export interface ResponsiveModalProps {
   title: string
   description?: string
   children: ReactNode
+  /** Full-height drawer on mobile instead of the default half/full snap points — for content (like the command palette) that wants to open already-expanded. */
+  mobileFullHeight?: boolean
+  /** Visually hides the title (still read by screen readers) for content that already shows its own heading/input as the first thing inside. */
+  visuallyHiddenTitle?: boolean
+  /** 'top' anchors the desktop dialog near the top of the viewport (e.g. the command palette) instead of the default vertical centering. */
+  desktopPosition?: 'center' | 'top'
 }
 
 /**
@@ -29,11 +35,59 @@ export interface ResponsiveModalProps {
  * focus-trap loop is tied to the same `modal` flag) — background content is
  * still fully unreachable via `inert`, which is the part that matters most.
  */
-export function ResponsiveModal({ open, onOpenChange, title, description, children }: ResponsiveModalProps) {
+export function ResponsiveModal({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  mobileFullHeight = false,
+  visuallyHiddenTitle = false,
+  desktopPosition = 'center',
+}: ResponsiveModalProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   useOverlayLock(open)
 
+  // Neither Radix Dialog nor vaul's Drawer restores focus to whatever
+  // triggered them here — both only know how to do that via their own
+  // <Trigger> component, which every caller skips (the trigger is often a
+  // plain button rendered well outside the dialog tree, e.g. a sidebar
+  // button or a command palette item). So it's done by hand: remember
+  // what had focus the moment this opens, give it back the moment it closes.
+  //
+  // The capture can't happen in a useEffect: content with its own
+  // `autoFocus` (the command palette's search input) steals focus during
+  // the commit phase, which runs before any passive effect, so by the time
+  // a useEffect ran document.activeElement would already be the stolen
+  // focus, not the real trigger. Capturing during render instead (the same
+  // "did a prop just change" pattern LogTimeSheet/FocusStartSheet already
+  // use) runs before this update is even committed, while focus is still
+  // wherever it was before the dialog opened.
+  const [wasOpen, setWasOpen] = useState(open)
+  const [previouslyFocused, setPreviouslyFocused] = useState<HTMLElement | null>(null)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) {
+      setPreviouslyFocused(document.activeElement as HTMLElement | null)
+    }
+  }
+
+  useEffect(() => {
+    if (open) return
+    if (previouslyFocused && document.contains(previouslyFocused)) {
+      previouslyFocused.focus()
+    }
+    // Only the close transition should fire this — re-running it for every
+    // re-render that happens to carry the same `previouslyFocused` value
+    // (e.g. a sibling state update while still open) isn't an infinite loop
+    // either way since `open` is the only thing that actually changes here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const titleClassName = visuallyHiddenTitle ? 'sr-only' : 'text-title text-text'
+
   if (isDesktop) {
+    const isTopAnchored = desktopPosition === 'top'
     return (
       <Dialog.Root open={open} onOpenChange={onOpenChange} modal={false}>
         <AnimatePresence>
@@ -48,21 +102,24 @@ export function ResponsiveModal({ open, onOpenChange, title, description, childr
                   transition={{ duration: 0.18 }}
                 />
               </Dialog.Overlay>
-              <Dialog.Content asChild forceMount>
+              <Dialog.Content asChild forceMount onCloseAutoFocus={(event) => event.preventDefault()}>
                 <motion.div
-                  className="z-modal fixed top-1/2 left-1/2 w-[min(520px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-hairline bg-surface p-6"
-                  initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                  className={cn(
+                    'z-modal fixed left-1/2 w-[min(520px,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-hairline bg-surface p-6',
+                    isTopAnchored ? 'top-[14vh]' : 'top-1/2 -translate-y-1/2',
+                  )}
+                  initial={{ opacity: 0, scale: 0.96, y: isTopAnchored ? -8 : 8 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96, y: 8 }}
-                  transition={SPRING}
+                  exit={{ opacity: 0, scale: 0.96, y: isTopAnchored ? -8 : 8 }}
+                  transition={SPRING_SNAPPY}
                 >
-                  <Dialog.Title className="text-title text-text">{title}</Dialog.Title>
+                  <Dialog.Title className={titleClassName}>{title}</Dialog.Title>
                   {description && (
                     <Dialog.Description className="mt-2 text-[length:var(--text-small)] text-text-2">
                       {description}
                     </Dialog.Description>
                   )}
-                  <div className="mt-6">{children}</div>
+                  <div className={visuallyHiddenTitle ? '' : 'mt-6'}>{children}</div>
                 </motion.div>
               </Dialog.Content>
             </Dialog.Portal>
@@ -78,19 +135,26 @@ export function ResponsiveModal({ open, onOpenChange, title, description, childr
       onOpenChange={onOpenChange}
       container={getOverlayRoot()}
       modal={false}
-      snapPoints={[0.5, 1]}
+      snapPoints={mobileFullHeight ? undefined : [0.5, 1]}
     >
       <Drawer.Portal>
         <Drawer.Overlay className="z-overlay fixed inset-0 bg-black/60" />
-        <Drawer.Content className="z-modal fixed inset-x-0 bottom-0 flex max-h-[90dvh] flex-col rounded-t-xl border border-hairline bg-surface p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <Drawer.Content
+          className={cn(
+            'z-modal fixed inset-x-0 bottom-0 flex flex-col rounded-t-xl border border-hairline bg-surface p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]',
+            mobileFullHeight ? 'h-[94dvh]' : 'max-h-[90dvh]',
+          )}
+        >
           <Drawer.Handle className="mx-auto mb-4 bg-hairline" />
-          <Drawer.Title className="text-title text-text">{title}</Drawer.Title>
+          <Drawer.Title className={titleClassName}>{title}</Drawer.Title>
           {description && (
             <Drawer.Description className="mt-2 text-[length:var(--text-small)] text-text-2">
               {description}
             </Drawer.Description>
           )}
-          <div className="mt-6 overflow-y-auto">{children}</div>
+          <div className={cn('overflow-y-auto', visuallyHiddenTitle ? '' : 'mt-6', mobileFullHeight && 'flex-1')}>
+            {children}
+          </div>
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>

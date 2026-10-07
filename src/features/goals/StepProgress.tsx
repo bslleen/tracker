@@ -3,7 +3,14 @@ import { cn } from '@/lib/cn'
 
 export function StepProgress({ step, count }: { step: number; count: number }) {
   return (
-    <div className="flex gap-1.5" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={count}>
+    <div
+      className="flex gap-1.5"
+      role="progressbar"
+      aria-label={`Step ${step + 1} of ${count}`}
+      aria-valuenow={step + 1}
+      aria-valuemin={1}
+      aria-valuemax={count}
+    >
       {Array.from({ length: count }, (_, index) => (
         <div key={index} className="h-1 flex-1 overflow-hidden rounded-full bg-chunk-empty">
           <motion.div

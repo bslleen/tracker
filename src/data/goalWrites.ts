@@ -1,7 +1,8 @@
-import { collection, deleteDoc, doc, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getFirebaseDb } from '@/lib/firebase'
 import { computeChunkProgress, minutesBanked } from '@/lib/chunks'
+import { recordWrites } from '@/lib/firestoreDevCounter'
 import { invalidate } from './cache'
+import { DEMO_UID, demoCreateGoal, demoDeleteGoal, demoSetGoalStatus, demoUpdateGoalChunkMinutes, readDemoGoal } from './demo/store'
 import type { GoalData, GoalStatus } from './types'
 
 export interface CreateGoalInput {
@@ -17,6 +18,15 @@ export interface CreateGoalInput {
 }
 
 export async function createGoal(input: CreateGoalInput): Promise<string> {
+  if (input.uid === DEMO_UID) {
+    const goalId = demoCreateGoal(input)
+    invalidate(`goals:${input.uid}:${input.month}`)
+    invalidate(`overdue-goals:${input.uid}`)
+    invalidate(`year-goals:${input.uid}:${input.month.slice(0, 4)}`)
+    return goalId
+  }
+
+  const [db, { collection, doc, serverTimestamp, setDoc }] = await Promise.all([getFirebaseDb(), import('firebase/firestore')])
   const goalRef = doc(collection(db, 'users', input.uid, 'goals'))
 
   const goal: GoalData = {
@@ -34,6 +44,7 @@ export async function createGoal(input: CreateGoalInput): Promise<string> {
   }
 
   await setDoc(goalRef, goal)
+  recordWrites(1)
   invalidate(`goals:${input.uid}:${input.month}`)
   invalidate(`overdue-goals:${input.uid}`)
   invalidate(`year-goals:${input.uid}:${input.month.slice(0, 4)}`)
@@ -48,6 +59,16 @@ export async function createGoal(input: CreateGoalInput): Promise<string> {
  * leave completedChunks meaning a different amount of time than before.
  */
 export async function updateGoalChunkMinutes(uid: string, goalId: string, newChunkMinutes: number): Promise<void> {
+  if (uid === DEMO_UID) {
+    const goal = readDemoGoal(goalId)
+    if (!goal) return
+    demoUpdateGoalChunkMinutes(goalId, newChunkMinutes)
+    invalidate(`goal:${uid}:${goalId}`)
+    invalidate(`goals:${uid}:${goal.month}`)
+    return
+  }
+
+  const [db, { doc, runTransaction, serverTimestamp }] = await Promise.all([getFirebaseDb(), import('firebase/firestore')])
   const goalRef = doc(db, 'users', uid, 'goals', goalId)
 
   const month = await runTransaction(db, async (tx) => {
@@ -64,6 +85,7 @@ export async function updateGoalChunkMinutes(uid: string, goalId: string, newChu
       carryMinutes: newCarryMinutes,
       updatedAt: serverTimestamp(),
     })
+    recordWrites(1)
 
     return goal.month
   })
@@ -75,8 +97,14 @@ export async function updateGoalChunkMinutes(uid: string, goalId: string, newChu
 }
 
 export async function setGoalStatus(uid: string, goalId: string, month: string, status: GoalStatus): Promise<void> {
-  const goalRef = doc(db, 'users', uid, 'goals', goalId)
-  await updateDoc(goalRef, { status, updatedAt: serverTimestamp() })
+  if (uid === DEMO_UID) {
+    demoSetGoalStatus(goalId, status)
+  } else {
+    const [db, { doc, serverTimestamp, updateDoc }] = await Promise.all([getFirebaseDb(), import('firebase/firestore')])
+    const goalRef = doc(db, 'users', uid, 'goals', goalId)
+    await updateDoc(goalRef, { status, updatedAt: serverTimestamp() })
+    recordWrites(1)
+  }
   invalidate(`goal:${uid}:${goalId}`)
   invalidate(`goals:${uid}:${month}`)
   invalidate(`overdue-goals:${uid}`)
@@ -84,7 +112,13 @@ export async function setGoalStatus(uid: string, goalId: string, month: string, 
 }
 
 export async function deleteGoal(uid: string, goalId: string, month: string): Promise<void> {
-  await deleteDoc(doc(db, 'users', uid, 'goals', goalId))
+  if (uid === DEMO_UID) {
+    demoDeleteGoal(goalId)
+  } else {
+    const [db, { deleteDoc, doc }] = await Promise.all([getFirebaseDb(), import('firebase/firestore')])
+    await deleteDoc(doc(db, 'users', uid, 'goals', goalId))
+    recordWrites(1)
+  }
   invalidate(`goal:${uid}:${goalId}`)
   invalidate(`goals:${uid}:${month}`)
   invalidate(`overdue-goals:${uid}`)

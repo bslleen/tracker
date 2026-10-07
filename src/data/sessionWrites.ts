@@ -1,7 +1,8 @@
-import { collection, doc, increment, runTransaction, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getFirebaseDb } from '@/lib/firebase'
 import { computeChunkProgress } from '@/lib/chunks'
+import { recordReads, recordWrites } from '@/lib/firestoreDevCounter'
 import { invalidate } from './cache'
+import { DEMO_UID, demoLogSession, demoUndoSession } from './demo/store'
 import type { GoalData, SessionData } from './types'
 
 export interface LogSessionInput {
@@ -38,6 +39,16 @@ function invalidateSessionWrite(uid: string, goalId: string, month: string) {
  * silently replace the whole `days.03` map instead of merging into it).
  */
 export async function logSession({ uid, goalId, month, day, minutes }: LogSessionInput): Promise<LogSessionResult> {
+  if (uid === DEMO_UID) {
+    const result = demoLogSession({ goalId, month, day, minutes })
+    invalidateSessionWrite(uid, goalId, month)
+    return result
+  }
+
+  const [db, { collection, doc, increment, runTransaction, serverTimestamp }] = await Promise.all([
+    getFirebaseDb(),
+    import('firebase/firestore'),
+  ])
   const sessionRef = doc(collection(db, 'users', uid, 'sessions'))
   const goalRef = doc(db, 'users', uid, 'goals', goalId)
   const monthRef = doc(db, 'users', uid, 'months', month)
@@ -47,6 +58,7 @@ export async function logSession({ uid, goalId, month, day, minutes }: LogSessio
     if (!goalSnap.exists()) {
       throw new Error(`Goal ${goalId} does not exist`)
     }
+    recordReads(1)
     const goal = goalSnap.data() as GoalData
     const { chunksAdded, newCarryMinutes } = computeChunkProgress(
       minutes,
@@ -80,6 +92,7 @@ export async function logSession({ uid, goalId, month, day, minutes }: LogSessio
       },
       { merge: true },
     )
+    recordWrites(3)
 
     return { chunksAdded, newCarryMinutes }
   })
@@ -95,11 +108,22 @@ export async function logSession({ uid, goalId, month, day, minutes }: LogSessio
  * arithmetic, which would lose information.
  */
 export async function undoSession(uid: string, sessionId: string): Promise<void> {
+  if (uid === DEMO_UID) {
+    const reversed = demoUndoSession(sessionId)
+    if (reversed) invalidateSessionWrite(uid, reversed.goalId, reversed.month)
+    return
+  }
+
+  const [db, { doc, increment, runTransaction, serverTimestamp }] = await Promise.all([
+    getFirebaseDb(),
+    import('firebase/firestore'),
+  ])
   const sessionRef = doc(db, 'users', uid, 'sessions', sessionId)
 
   const reversed = await runTransaction(db, async (tx) => {
     const sessionSnap = await tx.get(sessionRef)
     if (!sessionSnap.exists()) return null
+    recordReads(1)
     const session = sessionSnap.data() as SessionData
 
     const month = session.date.slice(0, 7)
@@ -123,6 +147,7 @@ export async function undoSession(uid: string, sessionId: string): Promise<void>
       },
       { merge: true },
     )
+    recordWrites(3)
 
     return { goalId: session.goalId, month }
   })

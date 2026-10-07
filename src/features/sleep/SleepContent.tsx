@@ -11,6 +11,7 @@ import {
 import { SleepChart } from './SleepChart'
 import { SleepInsightCard } from './SleepInsightCard'
 import { SleepLogSheet } from './SleepLogSheet'
+import { sleepLogSheetStore } from './sleepLogSheetStore'
 
 export interface SleepContentProps {
   monthDocs: Month[]
@@ -20,7 +21,9 @@ export interface SleepContentProps {
 
 export function SleepContent({ monthDocs, today, onLogSleep }: SleepContentProps) {
   const [range, setRange] = useState<SleepRange>('30d')
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isLocalSheetOpen, setIsLocalSheetOpen] = useState(false)
+  const isGlobalSheetOpen = sleepLogSheetStore.useIsOpen()
+  const isSheetOpen = isLocalSheetOpen || isGlobalSheetOpen
 
   const points = buildDailySleepSeries(monthDocs, today, range)
   const average = averageHours(points.filter((p) => p.hours > 0))
@@ -47,14 +50,21 @@ export function SleepContent({ monthDocs, today, onLogSleep }: SleepContentProps
           </span>
         </div>
 
-        <Button onClick={() => setIsSheetOpen(true)}>Log sleep</Button>
+        <Button onClick={() => setIsLocalSheetOpen(true)}>Log sleep</Button>
       </div>
 
       {insight && <SleepInsightCard insight={insight} />}
 
       <SleepChart points={points} range={range} onRangeChange={setRange} />
 
-      <SleepLogSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} onLog={onLogSleep} />
+      <SleepLogSheet
+        open={isSheetOpen}
+        onOpenChange={(open) => {
+          setIsLocalSheetOpen(open)
+          if (!open) sleepLogSheetStore.close()
+        }}
+        onLog={onLogSleep}
+      />
     </div>
   )
 }

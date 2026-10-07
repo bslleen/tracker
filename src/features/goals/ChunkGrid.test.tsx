@@ -8,10 +8,10 @@ describe('ChunkGrid', () => {
     expect(screen.getByRole('img', { name: 'French: 12 of 48 chunks completed' })).toBeInTheDocument()
   })
 
-  it('renders as an interactive grid with gridcells when interactive', () => {
+  it('renders as an interactive listbox with options when interactive', () => {
     render(<ChunkGrid total={10} completed={3} chunkMinutes={15} interactive />)
-    expect(screen.getByRole('grid')).toBeInTheDocument()
-    expect(screen.getAllByRole('gridcell')).toHaveLength(10)
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(screen.getAllByRole('option')).toHaveLength(10)
   })
 
   it('renders the simplified mini variant for size="sm"', () => {
@@ -22,6 +22,6 @@ describe('ChunkGrid', () => {
   it('switches to the canvas renderer above the DOM threshold', () => {
     const { container } = render(<ChunkGrid total={2000} completed={100} chunkMinutes={15} />)
     expect(container.querySelector('canvas')).toBeInTheDocument()
-    expect(container.querySelectorAll('[role="gridcell"]')).toHaveLength(0)
+    expect(container.querySelectorAll('[role="option"]')).toHaveLength(0)
   })
 })

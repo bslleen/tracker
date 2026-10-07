@@ -1,4 +1,3 @@
-import { toPng } from 'html-to-image'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { SHARE_HEIGHT, SHARE_WIDTH } from './ReviewShareCard'
@@ -18,6 +17,7 @@ export function useReviewShare(year: string) {
       // time bakes the fallback font into the PNG.
       await document.fonts.ready
 
+      const { toPng } = await import('html-to-image')
       const dataUrl = await toPng(node, { width: SHARE_WIDTH, height: SHARE_HEIGHT, pixelRatio: 1 })
       const filename = `chunks-${year}-review.png`
 

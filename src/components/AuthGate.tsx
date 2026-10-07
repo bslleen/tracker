@@ -1,15 +1,12 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui'
 import { enterDemoMode, useDemoMode } from '@/data/useDemoMode'
-import { signInAsGuest, signInWithGoogle, useAuth } from '@/data/useAuth'
-
-type PendingAction = 'google' | 'guest' | null
+import { useAuth } from '@/data/useAuth'
+import { SignInOptions } from './SignInOptions'
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth()
   const isDemoMode = useDemoMode()
-  const [pending, setPending] = useState<PendingAction>(null)
-  const [error, setError] = useState<string | null>(null)
 
   if (isLoading) {
     return <div className="min-h-dvh bg-bg" />
@@ -17,30 +14,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (user || isDemoMode) {
     return <>{children}</>
-  }
-
-  async function handleGoogle() {
-    setPending('google')
-    setError(null)
-    try {
-      await signInWithGoogle()
-    } catch {
-      setError('Could not sign in with Google. Try again.')
-    } finally {
-      setPending(null)
-    }
-  }
-
-  async function handleGuest() {
-    setPending('guest')
-    setError(null)
-    try {
-      await signInAsGuest()
-    } catch {
-      setError('Could not start a session. Try again.')
-    } finally {
-      setPending(null)
-    }
   }
 
   return (
@@ -51,18 +24,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
       </div>
 
       <div className="flex w-full max-w-xs flex-col gap-3">
-        <Button size="lg" onClick={handleGoogle} disabled={pending !== null}>
-          Continue with Google
-        </Button>
-        <Button size="lg" variant="subtle" onClick={handleGuest} disabled={pending !== null}>
-          Try it first
-        </Button>
+        <SignInOptions />
         <Button size="sm" variant="ghost" onClick={enterDemoMode}>
-          Demo mode
+          Try the demo
         </Button>
       </div>
-
-      {error && <p className="text-[length:var(--text-small)] text-danger">{error}</p>}
     </main>
   )
 }

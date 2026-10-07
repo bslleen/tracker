@@ -1,8 +1,9 @@
-import { collection, doc, getDocs, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getFirebaseDb } from '@/lib/firebase'
 import { carryOverGoal, nextMonth } from '@/lib/chunks'
+import { recordReads, recordWrites } from '@/lib/firestoreDevCounter'
 import type { Goal, GoalData, Session, SessionData } from './types'
 import { invalidate } from './cache'
+import { DEMO_UID, demoApplyMonthReviewDecisions, demoRestoreDeletedGoal } from './demo/store'
 
 export type GoalReviewDecision = 'carryOver' | 'archive' | 'abandon' | 'delete'
 
@@ -38,12 +39,33 @@ export interface ApplyMonthReviewResult {
  * soft-delete flag — there's nothing left in Firestore to reconstruct from).
  */
 export async function applyMonthReviewDecisions({ uid, month, choices }: ApplyMonthReviewInput): Promise<ApplyMonthReviewResult> {
+  if (uid === DEMO_UID) {
+    const result = demoApplyMonthReviewDecisions(choices)
+    invalidate(`goals:${uid}:${month}`)
+    invalidate(`goals:${uid}:${nextMonth(month)}`)
+    invalidate(`overdue-goals:${uid}`)
+    invalidate(`year:${uid}:${month.slice(0, 4)}`)
+    invalidate(`year-goals:${uid}:${month.slice(0, 4)}`)
+    invalidate(`year-goals:${uid}:${nextMonth(month).slice(0, 4)}`)
+    for (const { goal } of choices) {
+      invalidate(`goal:${uid}:${goal.id}`)
+      invalidate(`sessions:${uid}:${goal.id}`)
+    }
+    return result
+  }
+
+  const [db, { collection, doc, getDocs, query, serverTimestamp, where, writeBatch }] = await Promise.all([
+    getFirebaseDb(),
+    import('firebase/firestore'),
+  ])
+
   const deleted: DeletedGoalSnapshot[] = []
   const sessionsToDelete = await Promise.all(
     choices
       .filter((choice) => choice.decision === 'delete')
       .map(async (choice) => {
         const sessionsSnap = await getDocs(query(collection(db, 'users', uid, 'sessions'), where('goalId', '==', choice.goal.id)))
+        recordReads(sessionsSnap.docs.length)
         const sessions = sessionsSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as Session)
         deleted.push({ goal: choice.goal, sessions })
         return { goalId: choice.goal.id, sessions }
@@ -51,6 +73,7 @@ export async function applyMonthReviewDecisions({ uid, month, choices }: ApplyMo
   )
 
   const batch = writeBatch(db)
+  let batchWrites = 0
 
   for (const { goal, decision } of choices) {
     const goalRef = doc(db, 'users', uid, 'goals', goal.id)
@@ -66,19 +89,24 @@ export async function applyMonthReviewDecisions({ uid, month, choices }: ApplyMo
         }
         batch.set(newGoalRef, newGoal)
         batch.update(goalRef, { status: 'carried', updatedAt: serverTimestamp() })
+        batchWrites += 2
         break
       }
       case 'archive':
         batch.update(goalRef, { status: 'archived', updatedAt: serverTimestamp() })
+        batchWrites += 1
         break
       case 'abandon':
         batch.update(goalRef, { status: 'abandoned', updatedAt: serverTimestamp() })
+        batchWrites += 1
         break
       case 'delete': {
         batch.delete(goalRef)
+        batchWrites += 1
         const entry = sessionsToDelete.find((s) => s.goalId === goal.id)
         for (const session of entry?.sessions ?? []) {
           batch.delete(doc(db, 'users', uid, 'sessions', session.id))
+          batchWrites += 1
         }
         break
       }
@@ -86,6 +114,7 @@ export async function applyMonthReviewDecisions({ uid, month, choices }: ApplyMo
   }
 
   await batch.commit()
+  recordWrites(batchWrites)
 
   invalidate(`goals:${uid}:${month}`)
   invalidate(`goals:${uid}:${nextMonth(month)}`)
@@ -103,6 +132,17 @@ export async function applyMonthReviewDecisions({ uid, month, choices }: ApplyMo
 
 /** Undoes one deleted goal from its in-memory snapshot — re-creates the goal and every session doc with their original ids. */
 export async function restoreDeletedGoal(uid: string, snapshot: DeletedGoalSnapshot): Promise<void> {
+  if (uid === DEMO_UID) {
+    demoRestoreDeletedGoal(snapshot)
+    invalidate(`goals:${uid}:${snapshot.goal.month}`)
+    invalidate(`goal:${uid}:${snapshot.goal.id}`)
+    invalidate(`sessions:${uid}:${snapshot.goal.id}`)
+    invalidate(`overdue-goals:${uid}`)
+    invalidate(`year-goals:${uid}:${snapshot.goal.month.slice(0, 4)}`)
+    return
+  }
+
+  const [db, { doc, writeBatch }] = await Promise.all([getFirebaseDb(), import('firebase/firestore')])
   const batch = writeBatch(db)
   const { id: goalId, ...goalData } = snapshot.goal
   batch.set(doc(db, 'users', uid, 'goals', goalId), goalData satisfies GoalData)
@@ -113,6 +153,7 @@ export async function restoreDeletedGoal(uid: string, snapshot: DeletedGoalSnaps
   }
 
   await batch.commit()
+  recordWrites(1 + snapshot.sessions.length)
 
   invalidate(`goals:${uid}:${snapshot.goal.month}`)
   invalidate(`goal:${uid}:${goalId}`)

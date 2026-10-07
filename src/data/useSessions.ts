@@ -1,5 +1,6 @@
-import { collection, getDocs, limit as limitTo, orderBy, query, where } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getFirebaseDb } from '@/lib/firebase'
+import { recordReads } from '@/lib/firestoreDevCounter'
+import { DEMO_UID, readDemoSessions } from './demo/store'
 import type { Session } from './types'
 import { useAuth } from './useAuth'
 import { type CachedQueryResult, useCachedQuery } from './useCachedQuery'
@@ -10,6 +11,11 @@ export function useSessions(goalId: string, limit = 20): CachedQueryResult<Sessi
   const key = uid ? `sessions:${uid}:${goalId}:${limit}` : null
 
   return useCachedQuery<Session[]>(key, async () => {
+    if (uid === DEMO_UID) return readDemoSessions(goalId, limit)
+    const [db, { collection, getDocs, limit: limitTo, orderBy, query, where }] = await Promise.all([
+      getFirebaseDb(),
+      import('firebase/firestore'),
+    ])
     const sessionsQuery = query(
       collection(db, 'users', uid!, 'sessions'),
       where('goalId', '==', goalId),
@@ -17,6 +23,7 @@ export function useSessions(goalId: string, limit = 20): CachedQueryResult<Sessi
       limitTo(limit),
     )
     const snapshot = await getDocs(sessionsQuery)
+    recordReads(snapshot.docs.length)
     return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as Session)
   })
 }

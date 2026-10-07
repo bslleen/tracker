@@ -1,5 +1,6 @@
-import { collection, getDocs, limit as limitTo, orderBy, query, where } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getFirebaseDb } from '@/lib/firebase'
+import { recordReads } from '@/lib/firestoreDevCounter'
+import { DEMO_UID, readDemoYearSpending } from './demo/store'
 import type { SpendingEntry } from './types'
 import { useAuth } from './useAuth'
 import { type CachedQueryResult, useCachedQuery } from './useCachedQuery'
@@ -14,6 +15,11 @@ export function useYearSpending(year: string): CachedQueryResult<SpendingEntry[]
   const key = uid ? `year-spending:${uid}:${year}` : null
 
   return useCachedQuery<SpendingEntry[]>(key, async () => {
+    if (uid === DEMO_UID) return readDemoYearSpending(year)
+    const [db, { collection, getDocs, limit: limitTo, orderBy, query, where }] = await Promise.all([
+      getFirebaseDb(),
+      import('firebase/firestore'),
+    ])
     const spendingQuery = query(
       collection(db, 'users', uid!, 'spending'),
       where('date', '>=', `${year}-01-01`),
@@ -22,6 +28,7 @@ export function useYearSpending(year: string): CachedQueryResult<SpendingEntry[]
       limitTo(MAX_ENTRIES),
     )
     const snapshot = await getDocs(spendingQuery)
+    recordReads(snapshot.docs.length)
     return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as SpendingEntry)
   })
 }

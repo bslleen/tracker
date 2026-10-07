@@ -1,4 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
+import { SearchIcon } from '@/components/icons'
+import { commandPaletteStore } from '@/components/commandPaletteStore'
+import { Kbd } from '@/components/ui/Kbd'
 import { cn } from '@/lib/cn'
 import { ActivePill } from './ActivePill'
 import { LogTimeFab } from './LogTimeFab'
@@ -13,6 +16,21 @@ export function Sidebar() {
       style={{ width: 'var(--nav-sidebar-width)' }}
     >
       <div className="mb-6 px-2 text-[length:var(--text-body)] font-medium text-text">Chunks</div>
+
+      <button
+        type="button"
+        onClick={() => commandPaletteStore.open()}
+        className="mb-4 flex min-h-11 items-center justify-between gap-2 rounded-md border border-hairline px-3 text-[length:var(--text-small)] text-text-2"
+      >
+        <span className="inline-flex items-center gap-2">
+          <SearchIcon width={16} height={16} />
+          Search
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <Kbd>⌘</Kbd>
+          <Kbd>K</Kbd>
+        </span>
+      </button>
 
       <LogTimeFab variant="sidebar" />
 

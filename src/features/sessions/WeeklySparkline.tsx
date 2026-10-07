@@ -3,6 +3,7 @@ import { scaleBand, scaleLinear } from '@visx/scale'
 import { Bar } from '@visx/shape'
 import { motion, useReducedMotion } from 'motion/react'
 import type { Month } from '@/data/types'
+import { SPRING_SOFT } from '@/lib/motion'
 
 export interface WeeklySparklineProps {
   goalId: string
@@ -59,7 +60,7 @@ export function WeeklySparkline({ goalId, monthSummary }: WeeklySparklineProps) 
                 fill="var(--accent)"
                 initial={{ height: 0, y: HEIGHT }}
                 animate={{ height: barHeight, y }}
-                transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+                transition={SPRING_SOFT}
               />
             )
           })}

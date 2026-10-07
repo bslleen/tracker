@@ -1,9 +1,10 @@
-import type { Transition, Variants } from 'motion/react'
+import type { Variants } from 'motion/react'
+import { SPRING_SOFT } from '@/lib/motion'
 
 /** CLAUDE.md: "Elements enter with a stagger of 120ms." One shared file so every slide's timing feels consistent. */
 export const REVEAL_STAGGER_SEC = 0.12
 
-export const ENTER_SPRING: Transition = { type: 'spring', stiffness: 300, damping: 30 }
+export const ENTER_SPRING = SPRING_SOFT
 
 export function containerVariants(prefersReducedMotion: boolean): Variants {
   return {

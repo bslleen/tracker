@@ -20,7 +20,11 @@
   --surface-2: #1b1f23;
   --chunk-empty: #23282d;
   --text: #e8eaec;
-  --text-2: #7c858d;
+  /* #7f8890 — a hair lighter than the original #7c858d: that one measured
+     4.42:1 against --surface-2 (Kbd chips, the demo banner), just under
+     WCAG AA's 4.5:1 for normal-size text. This passes >=4.6:1 against bg,
+     surface AND surface-2, and is visually indistinguishable from before. */
+  --text-2: #7f8890;
   --accent: #4ade80;
   --accent-glow: rgb(74 222 128 / 30%);
   --streak: #fb923c;
@@ -36,9 +40,10 @@
   --nav-rail-width: 72px;
   --nav-sidebar-width: 240px;
 
-  /* Fonts */
-  --font-sans: 'Geist Variable', system-ui, sans-serif;
-  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+  /* Fonts — the Fallback faces are metric-matched (see font-fallback.css) so
+     the font-display: swap from system font -> real one doesn't reflow. */
+  --font-sans: 'Geist Variable', 'Geist Fallback', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono Fallback', ui-monospace, monospace;
 
   /* Fluid type not wired into Tailwind's theme (see @theme block for hero/title) */
   --text-body: 1rem;

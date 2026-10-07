@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { SPRING_SNAPPY } from '@/lib/motion'
 
 /**
  * One layoutId per nav tier (bottom bar / rail / sidebar), all inside one
@@ -7,5 +8,5 @@ import { motion } from 'motion/react'
  * (e.g. a goal card's shared-element expansion).
  */
 export function ActivePill({ layoutId, className }: { layoutId: string; className?: string }) {
-  return <motion.div layoutId={layoutId} className={className} transition={{ type: 'spring', stiffness: 380, damping: 32 }} />
+  return <motion.div layoutId={layoutId} className={className} transition={SPRING_SNAPPY} />
 }

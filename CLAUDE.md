@@ -20,7 +20,7 @@ Vite, React 18+, TypeScript (strict), Tailwind CSS, Motion (framer-motion, impor
 - --surface-2: #1B1F23
 - --chunk-empty: #23282D
 - --text: #E8EAEC
-- --text-2: #7C858D
+- --text-2: #7F8890 (lightened from an earlier #7C858D, which measured 4.42:1 against --surface-2 — just under WCAG AA's 4.5:1 for normal text)
 - --accent: #4ADE80 (glow = accent at 30% alpha)
 - --streak: #FB923C (tiny, rare use only)
 - --danger: #F87171 (only for destructive actions)

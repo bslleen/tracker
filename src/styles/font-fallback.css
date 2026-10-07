@@ -1,0 +1,36 @@
+/**
+ * Metric-matched fallback faces for Geist / Geist Mono, used as the second
+ * link in --font-sans / --font-mono (tokens.css) so the swap from
+ * system font -> real variable font (font-display: swap, see
+ * @fontsource-variable/*) reflows as little as possible — the actual CLS
+ * fix, not just the font-display setting on its own.
+ *
+ * size-adjust/ascent-override/descent-override/line-gap-override values
+ * below are measured, not guessed: computed from each real font file's
+ * OS/2 + hmtx metrics (average glyph width over a-z/A-Z/0-9, unitsPerEm,
+ * typo ascender/descender) against Arial (sans) / Courier New (mono) as the
+ * fallback baseline, via the standard fallback-matching formula (as used by
+ * next/font and fontaine):
+ *   sizeAdjust       = (primaryAvgWidth / primaryUPM) / (fallbackAvgWidth / fallbackUPM)
+ *   ascentOverride    = (primaryAscender / primaryUPM) / sizeAdjust
+ *   descentOverride   = abs(primaryDescender / primaryUPM) / sizeAdjust
+ *   lineGapOverride    = (primaryLineGap / primaryUPM) / sizeAdjust
+ */
+
+@font-face {
+  font-family: 'Geist Fallback';
+  src: local('Arial');
+  size-adjust: 102.46%;
+  ascent-override: 98.1%;
+  descent-override: 28.79%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Geist Mono Fallback';
+  src: local('Courier New');
+  size-adjust: 99.98%;
+  ascent-override: 100.52%;
+  descent-override: 29.5%;
+  line-gap-override: 0%;
+}

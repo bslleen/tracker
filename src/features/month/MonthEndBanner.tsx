@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui'
 import { earliestMonth, useOverdueGoals } from '@/data/useOverdueGoals'
 import { currentMonth, monthName } from '@/lib/chunks'
+import { SPRING_SNAPPY } from '@/lib/motion'
 
 /** A calm nudge on the dashboard once any active goal's month has passed — see /month (MonthReview.tsx). */
 export function MonthEndBanner() {
@@ -17,7 +18,7 @@ export function MonthEndBanner() {
     <motion.div
       initial={prefersReducedMotion ? false : { opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+      transition={SPRING_SNAPPY}
       className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-surface-2 px-5 py-4"
     >
       <p className="text-[length:var(--text-small)] text-text">

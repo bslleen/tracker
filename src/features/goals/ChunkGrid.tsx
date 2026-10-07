@@ -402,7 +402,16 @@ function FullChunkGrid({
 
           <div
             ref={gridRef}
-            role={interactive ? 'grid' : 'img'}
+            // listbox/option (not grid/gridcell): the cells are laid out via
+            // CSS grid for visuals only, as a flat DOM list (arrow-key nav and
+            // the proximity-hover effect both index straight into
+            // gridRef.current.children) — grid/gridcell's ARIA semantics
+            // require an intervening role="row" per visual row, which this
+            // flat structure doesn't have. listbox/option has no such
+            // requirement, and aria-selected (already set per cell below) is
+            // exactly the right property for "this chunk is filled".
+            role={interactive ? 'listbox' : 'img'}
+            aria-multiselectable={interactive ? true : undefined}
             aria-label={label ? `${label}: ${completed} of ${total} chunks completed` : `${completed} of ${total} chunks completed`}
             className="isolate grid"
             style={{

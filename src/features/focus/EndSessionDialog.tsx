@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { OverlayPortal } from '@/components/OverlayPortal'
 import { Button } from '@/components/ui'
 import { useOverlayLock } from '@/hooks/useOverlayLock'
+import { SPRING_SNAPPY } from '@/lib/motion'
 
 export interface EndSessionDialogProps {
   open: boolean
@@ -41,7 +42,7 @@ export function EndSessionDialog({ open, onCancel, onConfirm }: EndSessionDialog
               initial={{ opacity: 0, scale: 0.96, y: 8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 8 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              transition={SPRING_SNAPPY}
             >
               <h2 id="end-session-title" className="text-title text-text">
                 End session?

@@ -1,5 +1,6 @@
-import { collection, getDocs, query, where } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getFirebaseDb } from '@/lib/firebase'
+import { recordReads } from '@/lib/firestoreDevCounter'
+import { DEMO_UID, readDemoOverdueGoals } from './demo/store'
 import type { Goal } from './types'
 import { useAuth } from './useAuth'
 import { type CachedQueryResult, useCachedQuery } from './useCachedQuery'
@@ -17,12 +18,15 @@ export function useOverdueGoals(currentMonthValue: string): CachedQueryResult<Go
   const key = uid ? `overdue-goals:${uid}:${currentMonthValue}` : null
 
   return useCachedQuery<Goal[]>(key, async () => {
+    if (uid === DEMO_UID) return readDemoOverdueGoals(currentMonthValue)
+    const [db, { collection, getDocs, query, where }] = await Promise.all([getFirebaseDb(), import('firebase/firestore')])
     const overdueQuery = query(
       collection(db, 'users', uid!, 'goals'),
       where('status', '==', 'active'),
       where('month', '<', currentMonthValue),
     )
     const snapshot = await getDocs(overdueQuery)
+    recordReads(snapshot.docs.length)
     return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as Goal)
   })
 }

@@ -6,6 +6,7 @@ import { AnimatedNumber, ProgressRing, Tooltip } from '@/components/ui'
 import { chunkCount, formatHoursMinutes, minutesBanked, percentComplete } from '@/lib/chunks'
 import { cn } from '@/lib/cn'
 import { shiftAccentHue } from '@/lib/color'
+import { SPRING_SNAPPY, SPRING_SOFT } from '@/lib/motion'
 import { ChunkGrid } from './ChunkGrid'
 
 export interface GoalCardProps {
@@ -60,11 +61,11 @@ export function GoalCard({
       animate={{
         opacity: 1,
         y: 0,
-        transition: { type: 'spring', stiffness: 380, damping: 32, delay: animateEntrance ? entranceIndex * 0.06 : 0 },
+        transition: { ...SPRING_SNAPPY, delay: animateEntrance ? entranceIndex * 0.06 : 0 },
       }}
       exit={{ opacity: 0, y: -8 }}
       whileHover={{ y: -2 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+      transition={SPRING_SNAPPY}
       onLayoutAnimationStart={() => setIsAnimatingLayout(true)}
       onLayoutAnimationComplete={() => setIsAnimatingLayout(false)}
       className={cn(
@@ -84,7 +85,7 @@ export function GoalCard({
         style={{ transformOrigin: 'left', backgroundColor: shiftAccentHue(goal.hue) }}
         initial={{ scaleX: 0 }}
         animate={{ scaleX: percent / 100 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        transition={SPRING_SOFT}
       />
 
       <Link to={linkTo ?? `/goals/${goal.id}`} className="flex flex-col gap-4 @sm:flex-row @sm:items-center @sm:gap-6">

@@ -1,5 +1,7 @@
 import { Toaster } from 'sonner'
 import { createPortal } from 'react-dom'
+import { CheckIcon } from '@/components/icons'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { getToastRoot } from '@/lib/toast-root'
 
 /**
@@ -13,13 +15,16 @@ import { getToastRoot } from '@/lib/toast-root'
  * scripts/check-z-index.mjs still passes.
  */
 export function ToastPortal() {
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+
   return createPortal(
     <Toaster
       theme="dark"
-      position="bottom-center"
+      position={isDesktop ? 'bottom-right' : 'bottom-center'}
       offset={24}
       mobileOffset={{ bottom: 'calc(var(--nav-bottom-height) + env(safe-area-inset-bottom) + 16px)' }}
       style={{ zIndex: 'var(--z-toast)' }}
+      icons={{ success: <CheckIcon className="text-accent" /> }}
       toastOptions={{
         style: {
           background: 'var(--surface-2)',

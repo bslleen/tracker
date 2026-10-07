@@ -5,6 +5,7 @@ import { Button, SegmentedToggle } from '@/components/ui'
 import type { SpendingEntry } from '@/data/types'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { SpendingAddSheet } from './SpendingAddSheet'
+import { spendingAddSheetStore } from './spendingAddSheetStore'
 import { SpendingDonutChart } from './SpendingDonutChart'
 import { SpendingList } from './SpendingList'
 import { SpendingTreemap } from './SpendingTreemap'
@@ -34,7 +35,9 @@ export function SpendingContent({ entries, onAdd, onDeleteEntry, onRestoreEntry 
   const isWideScreen = useMediaQuery('(min-width: 1024px)')
   const [chartMode, setChartMode] = useState<ChartMode>('donut')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [isLocalAddOpen, setIsLocalAddOpen] = useState(false)
+  const isGlobalAddOpen = spendingAddSheetStore.useIsOpen()
+  const isAddOpen = isLocalAddOpen || isGlobalAddOpen
 
   const categories = groupByCategory(entries)
   const segments = computeDonutSegments(categories)
@@ -75,7 +78,7 @@ export function SpendingContent({ entries, onAdd, onDeleteEntry, onRestoreEntry 
       <h1 className="sr-only">Spending</h1>
 
       <div className="flex items-center justify-end">
-        <Button onClick={() => setIsAddOpen(true)}>Add spending</Button>
+        <Button onClick={() => setIsLocalAddOpen(true)}>Add spending</Button>
       </div>
 
       {categories.length === 0 ? (
@@ -110,7 +113,10 @@ export function SpendingContent({ entries, onAdd, onDeleteEntry, onRestoreEntry 
 
       <SpendingAddSheet
         open={isAddOpen}
-        onOpenChange={setIsAddOpen}
+        onOpenChange={(open) => {
+          setIsLocalAddOpen(open)
+          if (!open) spendingAddSheetStore.close()
+        }}
         existingCategories={categories.map((c) => c.category)}
         onAdd={handleAdd}
       />

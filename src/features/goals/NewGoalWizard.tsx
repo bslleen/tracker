@@ -4,6 +4,7 @@ import { createGoal } from '@/data/goalWrites'
 import { useAuth } from '@/data/useAuth'
 import { Button } from '@/components/ui'
 import { currentMonth, nextMonth } from '@/lib/chunks'
+import { SPRING_SNAPPY } from '@/lib/motion'
 import { StepProgress } from './StepProgress'
 import { ChunksStep } from './steps/ChunksStep'
 import { NameStep } from './steps/NameStep'
@@ -80,7 +81,7 @@ export function NewGoalWizard({ existingGoalCount, onCreated, onCancel }: NewGoa
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            transition={SPRING_SNAPPY}
           >
             {state.step === 0 && (
               <NameStep

@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint . && npm run check:z",
     "test": "vitest run",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-chunks-rules-test \"vitest run --config vitest.rules.config.ts\"",
+    "test:smoke": "playwright test --config playwright.preview.config.ts",
     "check:z": "node scripts/check-z-index.mjs"
   },
   "dependencies": {
@@ -39,7 +41,9 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@playwright/test": "^1.63.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
@@ -53,9 +57,11 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
+    "firebase-tools": "^15.32.1",
     "globals": "^17.13.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.9",
+    "rollup-plugin-visualizer": "^7.1.1",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.71.0",
     "vite": "^8.3.0",

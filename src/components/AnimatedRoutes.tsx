@@ -1,6 +1,7 @@
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
+import { useLenis } from '@/lib/lenis-context'
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const GoalDetail = lazy(() => import('@/pages/GoalDetail'))
@@ -10,6 +11,7 @@ const Sleep = lazy(() => import('@/pages/Sleep'))
 const Spending = lazy(() => import('@/pages/Spending'))
 const YearInReview = lazy(() => import('@/pages/YearInReview'))
 const Settings = lazy(() => import('@/pages/Settings'))
+const NotFound = lazy(() => import('@/pages/NotFound'))
 
 /**
  * The location is frozen and passed explicitly to <Routes> so the OLD page
@@ -31,6 +33,18 @@ const Settings = lazy(() => import('@/pages/Settings'))
 export function AnimatedRoutes() {
   const location = useLocation()
   const prefersReducedMotion = useReducedMotion()
+  const lenis = useLenis()
+
+  // Scroll to top on every navigation — through Lenis when it's driving the
+  // scroll (desktop, fine pointer, motion allowed), otherwise the native API
+  // it would normally intercept.
+  useEffect(() => {
+    if (lenis) {
+      lenis.scrollTo(0, { immediate: true })
+    } else {
+      window.scrollTo(0, 0)
+    }
+  }, [location.pathname, lenis])
 
   return (
     <LayoutGroup id="goals">
@@ -52,6 +66,7 @@ export function AnimatedRoutes() {
               <Route path="/spending" element={<Spending />} />
               <Route path="/review" element={<YearInReview />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </motion.div>

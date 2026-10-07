@@ -1,7 +1,9 @@
 import { AnimatePresence, motion } from 'motion/react'
+import { useEffect } from 'react'
 import { OverlayPortal } from '@/components/OverlayPortal'
 import { Button } from '@/components/ui'
 import { useOverlayLock } from '@/hooks/useOverlayLock'
+import { SPRING_SNAPPY } from '@/lib/motion'
 
 export interface DeleteGoalConfirmDialogProps {
   open: boolean
@@ -10,9 +12,26 @@ export interface DeleteGoalConfirmDialogProps {
   onConfirm: () => void
 }
 
-/** Same shape as Focus Mode's EndSessionDialog — a quick, danger-colored yes/no, no type-to-confirm needed. */
+/**
+ * Same shape as Focus Mode's EndSessionDialog — a quick, danger-colored
+ * yes/no, no type-to-confirm needed. Not built on Radix Dialog (unlike
+ * ResponsiveModal), so it doesn't inherit DismissableLayer's Escape
+ * handling — wired here directly, scoped to while it's actually open, so it
+ * cancels (the non-destructive action) rather than confirming the delete.
+ */
 export function DeleteGoalConfirmDialog({ open, goalName, onCancel, onConfirm }: DeleteGoalConfirmDialogProps) {
   useOverlayLock(open)
+
+  useEffect(() => {
+    if (!open) return
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      onCancel()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onCancel])
 
   return (
     <OverlayPortal>
@@ -36,7 +55,7 @@ export function DeleteGoalConfirmDialog({ open, goalName, onCancel, onConfirm }:
               initial={{ opacity: 0, scale: 0.96, y: 8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 8 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              transition={SPRING_SNAPPY}
             >
               <h2 id="delete-goal-title" className="text-title text-text">
                 Delete "{goalName}"?

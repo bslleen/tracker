@@ -7,6 +7,7 @@ import type { GoalReviewDecision } from '@/data/monthReviewWrites'
 import { ChunkGrid } from '@/features/goals/ChunkGrid'
 import { chunkCount, formatHoursMinutes, monthName, nextMonth, percentComplete, remainingMinutes } from '@/lib/chunks'
 import { cn } from '@/lib/cn'
+import { SPRING_BOUNCY, SPRING_SOFT } from '@/lib/motion'
 import { DecisionControl } from './DecisionControl'
 
 export interface SubjectReviewCardProps {
@@ -50,7 +51,7 @@ export function SubjectReviewCard({ goal, index, gridSize, decision, onSelectDec
     <motion.div
       initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: isDone ? 0.5 : 1, y: hasRevealed ? 0 : 16 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      transition={SPRING_SOFT}
       className="@container flex flex-col gap-4 rounded-xl border border-hairline bg-surface p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -60,7 +61,7 @@ export function SubjectReviewCard({ goal, index, gridSize, decision, onSelectDec
             <motion.span
               initial={prefersReducedMotion ? false : { scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20, delay: prefersReducedMotion ? 0 : 0.3 }}
+              transition={{ ...SPRING_BOUNCY, delay: prefersReducedMotion ? 0 : 0.3 }}
               className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent/15 text-accent"
               aria-label="Complete"
             >

@@ -1,4 +1,5 @@
 import { CommandPalette } from '@/components/CommandPalette'
+import { DemoBanner } from '@/components/DemoBanner'
 import { FocusMode } from '@/features/focus/FocusMode'
 import { FocusStartSheet } from '@/features/focus/FocusStartSheet'
 import { AnimatedRoutes } from './AnimatedRoutes'
@@ -19,6 +20,7 @@ export function AppShell() {
       <main
         className="mx-auto min-h-dvh max-w-[1200px] px-[var(--gutter)] pt-[var(--gutter)] pb-[calc(var(--nav-bottom-height)+env(safe-area-inset-bottom)+var(--gutter))] md:pb-[var(--gutter)] md:pl-[calc(var(--nav-rail-width)+var(--gutter))] lg:pl-[calc(var(--nav-sidebar-width)+var(--gutter))]"
       >
+        <DemoBanner />
         <AnimatedRoutes />
       </main>
       <CommandPalette />

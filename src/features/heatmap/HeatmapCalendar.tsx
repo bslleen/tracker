@@ -28,9 +28,20 @@ export interface HeatmapCalendarProps {
   onSelectDate: (date: string) => void
   goalNameFor: (goalId: string) => string
   prefersReducedMotion: boolean
+  /** A plain-text summary for screen readers — the grid itself is a collection of real, individually-focusable buttons, not a flat image, so it can't carry role="img" (that forbids interactive descendants). */
+  summary: string
 }
 
-export function HeatmapCalendar({ grid, year, hueShift, selectedDate, onSelectDate, goalNameFor, prefersReducedMotion }: HeatmapCalendarProps) {
+export function HeatmapCalendar({
+  grid,
+  year,
+  hueShift,
+  selectedDate,
+  onSelectDate,
+  goalNameFor,
+  prefersReducedMotion,
+  summary,
+}: HeatmapCalendarProps) {
   const isCoarsePointer = useMediaQuery('(pointer: coarse)')
   const { ref: outerRef, width: containerWidth } = useContainerWidth<HTMLDivElement>()
   const showWeekdayLabels = containerWidth === 0 || containerWidth >= WEEKDAY_LABEL_MIN_CONTAINER_WIDTH
@@ -70,9 +81,10 @@ export function HeatmapCalendar({ grid, year, hueShift, selectedDate, onSelectDa
       <div
         className="flex-1 overflow-x-auto pb-1"
         style={{ scrollSnapType: 'x mandatory' }}
-        role="img"
+        role="group"
         aria-label={`Study heatmap for ${year}`}
       >
+        <p className="sr-only">{summary}</p>
         <div className="relative" style={{ height: 24, width: grid.columns * weekColumnWidth }}>
           {grid.monthLabels.map(({ col, label }) => (
             <span

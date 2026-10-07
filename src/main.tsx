@@ -2,9 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
+import { LazyAmbientBackgroundPortal } from './components/LazyAmbientBackgroundPortal.tsx'
 import { ToastPortal } from './components/ToastPortal.tsx'
 import { LenisProvider } from './lib/lenis.tsx'
+import { preloadFonts } from './lib/preloadFonts.ts'
 import './index.css'
+
+preloadFonts()
 
 const container = document.getElementById('app-root')
 if (!container) {
@@ -13,6 +17,7 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
+    <LazyAmbientBackgroundPortal />
     <BrowserRouter>
       <LenisProvider>
         <App />
